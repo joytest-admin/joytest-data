@@ -137,6 +137,7 @@ export const getTestResultById = async (
     testTypeId: testResult.testTypeId,
     testTypeName: testType?.name,
     dateOfBirth: testResult.dateOfBirth,
+    testDate: testResult.testDate,
     symptoms: testResult.symptoms,
     pathogenId: testResult.pathogenId,
     pathogenName: testResult.pathogenId
@@ -198,6 +199,12 @@ export const createTestResultService = async (
     throw new BadRequestError('Invalid date of birth format');
   }
 
+  // Parse test date
+  const testDate = new Date(data.testDate);
+  if (isNaN(testDate.getTime())) {
+    throw new BadRequestError('Invalid test date format');
+  }
+
   // Validate symptoms array (optional - can be empty or undefined)
   const symptoms = data.symptoms || []; // Default to empty array if undefined
   if (!Array.isArray(symptoms)) {
@@ -243,6 +250,7 @@ export const createTestResultService = async (
       icpNumber: data.icpNumber,
       testTypeId: data.testTypeId,
       dateOfBirth,
+      testDate,
       symptoms: symptoms, // Use the normalized array (empty if undefined)
       pathogenId: data.pathogenId || null,
       otherInformations: data.otherInformations,
@@ -308,6 +316,7 @@ export const createTestResultService = async (
     testTypeId: testResult.testTypeId,
     testTypeName: testType.name,
     dateOfBirth: testResult.dateOfBirth,
+    testDate: testResult.testDate,
     symptoms: testResult.symptoms,
     pathogenId: testResult.pathogenId,
     pathogenName: pathogen?.name || null,
@@ -410,6 +419,15 @@ export const updateTestResultService = async (
     }
   }
 
+  // Parse test date if provided
+  let testDate: Date | undefined;
+  if (data.testDate) {
+    testDate = new Date(data.testDate);
+    if (isNaN(testDate.getTime())) {
+      throw new BadRequestError('Invalid test date format');
+    }
+  }
+
   const updateData: any = {};
 
   // Validate trimester if provided
@@ -448,6 +466,7 @@ export const updateTestResultService = async (
   if (data.icpNumber !== undefined) updateData.icpNumber = data.icpNumber;
   if (data.testTypeId !== undefined) updateData.testTypeId = data.testTypeId;
   if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth;
+  if (testDate !== undefined) updateData.testDate = testDate;
   if (data.pathogenId !== undefined) updateData.pathogenId = data.pathogenId;
   if (data.otherInformations !== undefined) updateData.otherInformations = data.otherInformations;
   if (data.sari !== undefined) updateData.sari = data.sari;
@@ -528,6 +547,7 @@ export const updateTestResultService = async (
     testTypeId: testResult.testTypeId,
     testTypeName: testType?.name,
     dateOfBirth: testResult.dateOfBirth,
+    testDate: testResult.testDate,
     symptoms: testResult.symptoms,
     pathogenId: testResult.pathogenId,
     pathogenName: pathogen?.name || null,

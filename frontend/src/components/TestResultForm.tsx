@@ -94,6 +94,14 @@ export default function TestResultForm({
     return '';
   };
 
+  const getInitialTestDate = (): string => {
+    if (initialData?.testDate) {
+      // Convert testDate to YYYY-MM-DD format for date input
+      return new Date(initialData.testDate).toISOString().split('T')[0];
+    }
+    return new Date().toISOString().split('T')[0];
+  };
+
   // Helper to get last test type from localStorage
   const getLastTestTypeFromStorage = (): string => {
     if (typeof window !== 'undefined') {
@@ -160,7 +168,7 @@ export default function TestResultForm({
   const [citySuggestions, setCitySuggestions] = useState<CityResponse[]>([]);
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const [loadingInitialCity, setLoadingInitialCity] = useState(false);
-  const [testDate, setTestDate] = useState(new Date().toISOString().split('T')[0]);
+  const [testDate, setTestDate] = useState(getInitialTestDate());
   const [temperature, setTemperature] = useState<string>(getInitialTemperature());
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>(getInitialSymptoms());
   const [otherInformations, setOtherInformations] = useState(initialData?.otherInformations || '');
@@ -503,6 +511,7 @@ export default function TestResultForm({
           cityId: selectedCity.id,
           testTypeId,
           dateOfBirth,
+          testDate: new Date(testDate).toISOString(), // Convert test date to ISO string
           symptoms: symptoms.length > 0 ? symptoms : undefined, // Only include if not empty
           pathogenId: result === 'positive' ? pathogenId : undefined,
           patientId: patientId || undefined,
@@ -530,6 +539,7 @@ export default function TestResultForm({
           icpNumber: profileIcpNumber || '', // Include ICP number from doctor's profile
           testTypeId,
           dateOfBirth,
+          testDate: new Date(testDate).toISOString(), // Convert test date to ISO string
           symptoms: symptoms.length > 0 ? symptoms : undefined, // Only include if not empty
           pathogenId: result === 'positive' ? pathogenId : undefined,
           patientId: patientId || undefined, // Include patient ID if selected

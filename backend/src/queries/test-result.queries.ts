@@ -87,6 +87,7 @@ export const findAllTestResults = async (
     testTypeId: row.test_type_id,
     testTypeName: row.test_type_name,
     dateOfBirth: row.date_of_birth,
+    testDate: row.test_date,
     symptoms: row.symptoms || [],
     pathogenId: row.pathogen_id || null,
     pathogenName: row.pathogen_name || null,
@@ -207,6 +208,7 @@ export const findDoctorTestResults = async (
     testTypeId: row.test_type_id,
     testTypeName: row.test_type_name,
     dateOfBirth: row.date_of_birth,
+    testDate: row.test_date,
     symptoms: row.symptoms || [],
     pathogenId: row.pathogen_id || null,
     pathogenName: row.pathogen_name || null,
@@ -292,6 +294,7 @@ export const findDoctorTestResultsByInterval = async (
     testTypeId: row.test_type_id,
     testTypeName: row.test_type_name,
     dateOfBirth: row.date_of_birth,
+    testDate: row.test_date,
     symptoms: row.symptoms || [],
     pathogenId: row.pathogen_id || null,
     pathogenName: row.pathogen_name || null,
@@ -351,6 +354,7 @@ export const findDoctorTestResultsByPatient = async (
     testTypeId: row.test_type_id,
     testTypeName: row.test_type_name,
     dateOfBirth: row.date_of_birth,
+    testDate: row.test_date,
     symptoms: row.symptoms || [],
     pathogenId: row.pathogen_id || null,
     pathogenName: row.pathogen_name || null,
@@ -383,6 +387,7 @@ export const createTestResult = async (
     icpNumber: string;
     testTypeId: string;
     dateOfBirth: Date;
+    testDate: Date;
     symptoms: string[];
     pathogenId?: string | null;
     otherInformations?: string | null;
@@ -401,16 +406,17 @@ export const createTestResult = async (
   const pool = getDatabasePool();
   const result = await pool.query(
     `INSERT INTO test_results (
-      city_id, icp_number, test_type_id, date_of_birth, symptoms, pathogen_id,
+      city_id, icp_number, test_type_id, date_of_birth, test_date, symptoms, pathogen_id,
       other_informations, sari, atb, antivirals, obesity,
       respiratory_support, ecmo, pregnancy, trimester, patient_id, created_by
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
     RETURNING *`,
     [
       data.cityId,
       data.icpNumber,
       data.testTypeId,
       data.dateOfBirth,
+      data.testDate,
       data.symptoms,
       data.pathogenId || null,
       data.otherInformations || null,
@@ -446,6 +452,7 @@ export const updateTestResult = async (
     cityId?: number;
     testTypeId?: string;
     dateOfBirth?: Date;
+    testDate?: Date;
     symptoms?: string[];
     pathogenId?: string | null;
     otherInformations?: string | null;
@@ -479,6 +486,12 @@ export const updateTestResult = async (
   if (data.dateOfBirth !== undefined) {
     updateFields.push(`date_of_birth = $${paramIndex}`);
     values.push(data.dateOfBirth);
+    paramIndex++;
+  }
+
+  if (data.testDate !== undefined) {
+    updateFields.push(`test_date = $${paramIndex}`);
+    values.push(data.testDate);
     paramIndex++;
   }
 
@@ -680,6 +693,7 @@ export const findAdminTestResults = async (options: {
     testTypeId: row.test_type_id,
     testTypeName: row.test_type_name,
     dateOfBirth: row.date_of_birth,
+    testDate: row.test_date,
     symptoms: row.symptoms || [],
     pathogenId: row.pathogen_id || null,
     pathogenName: row.pathogen_name || null,
@@ -771,6 +785,7 @@ export const findAdminTestResultsForExport = async (options: {
     testTypeId: row.test_type_id,
     testTypeName: row.test_type_name,
     dateOfBirth: row.date_of_birth,
+    testDate: row.test_date,
     symptoms: row.symptoms || [],
     pathogenId: row.pathogen_id || null,
     pathogenName: row.pathogen_name || null,

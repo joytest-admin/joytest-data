@@ -160,6 +160,7 @@ export interface CreateTestResultRequest {
   icpNumber: string; // ICP number from doctor's profile
   testTypeId: string;
   dateOfBirth: string; // ISO date string
+  testDate: string; // ISO date string - Date when the test was actually performed
   symptoms?: string[]; // Optional - can be empty array or undefined
   pathogenId?: string; // Required if result is positive
   patientId?: string;
@@ -180,6 +181,7 @@ export interface UpdateTestResultRequest {
   cityId?: number;
   testTypeId?: string;
   dateOfBirth?: string; // ISO date string
+  testDate?: string; // ISO date string - Date when the test was actually performed
   symptoms?: string[];
   pathogenId?: string;
   patientId?: string | null;
@@ -203,6 +205,7 @@ export interface TestResultResponse {
   testTypeId: string;
   testTypeName?: string;
   dateOfBirth: string;
+  testDate: string; // Date when the test was actually performed
   symptoms: string[];
   pathogenId?: string | null;
   pathogenName?: string | null;

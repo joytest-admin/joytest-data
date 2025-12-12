@@ -5,16 +5,27 @@
  * Handles user authentication
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { post } from '@/src/lib/api-client';
 
-export default function LoginForm() {
+interface LoginFormProps {
+  initialError?: string;
+}
+
+export default function LoginForm({ initialError }: LoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(initialError || '');
   const [loading, setLoading] = useState(false);
+
+  // Set initial error from query parameter
+  useEffect(() => {
+    if (initialError === 'admin_required') {
+      setError('Tento portál je určen pouze pro administrátory. Pro přístup použijte administrátorský účet.');
+    }
+  }, [initialError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -6,15 +6,26 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import LoginForm from '@/src/components/LoginForm';
+import { isAdminToken } from '@/src/lib/jwt';
 
-export default async function LoginPage() {
+type SearchParams = { error?: string } | Promise<{ error?: string }>;
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams?: SearchParams;
+}) {
   const cookieStore = await cookies();
-  const token = cookieStore.get('auth_token');
+  const token = cookieStore.get('auth_token')?.value;
 
-  // If already logged in, redirect to dashboard
-  if (token) {
+  // If already logged in as admin, redirect to dashboard
+  if (token && isAdminToken(token)) {
     redirect('/dashboard');
   }
+
+  // Resolve searchParams if it's a Promise (Next.js 15+)
+  const resolvedParams = searchParams instanceof Promise ? await searchParams : searchParams;
+  const error = resolvedParams?.error;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
@@ -23,7 +34,7 @@ export default async function LoginPage() {
           <h2 className="text-3xl font-bold text-gray-900">JOY MED Admin</h2>
           <p className="mt-2 text-sm text-gray-600">Přihlaste se do administračního portálu</p>
         </div>
-        <LoginForm />
+        <LoginForm initialError={error} />
       </div>
     </div>
   );

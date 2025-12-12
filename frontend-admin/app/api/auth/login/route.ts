@@ -1,11 +1,13 @@
 /**
  * Login API route
  * Handles authentication with backend
+ * Only allows admin users to log into admin portal
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { backendPost } from '@/src/lib/backend-client';
 import { AuthResponse, LoginRequest } from '@/src/types/api.types';
+import { isAdminToken } from '@/src/lib/jwt';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,8 +23,22 @@ export async function POST(request: NextRequest) {
       throw new Error('Invalid login response: missing token');
     }
 
-    // Set token in cookie
+    // Check if user is admin before allowing login
     const token = response.data.token;
+    if (!isAdminToken(token)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            message: 'Admin access required. This portal is only for administrators.',
+            statusCode: 403,
+          },
+        },
+        { status: 403 },
+      );
+    }
+
+    // Set token in cookie
     const cookieResponse = NextResponse.json(response);
     
     // Set cookie with proper configuration

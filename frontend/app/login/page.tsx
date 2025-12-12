@@ -32,6 +32,18 @@ export default async function LoginPage({
   const resolvedParams = searchParams instanceof Promise ? await searchParams : searchParams;
   const error = resolvedParams?.error;
 
-  return <LoginPageContent initialError={error} />;
+  // Map error codes to user-friendly messages
+  let errorMessage: string | undefined;
+  if (error === 'invalid_token') {
+    errorMessage = 'Neplatný odkaz. Prosím použijte platný odkaz nebo se přihlaste pomocí hesla.';
+  } else if (error === 'account_pending') {
+    errorMessage = 'Váš účet čeká na schválení administrátorem. Prosím počkejte na schválení.';
+  } else if (error === 'password_required') {
+    errorMessage = 'Tento účet vyžaduje přihlášení pomocí hesla. Prosím použijte přihlašovací formulář.';
+  } else if (error === 'admin_detected') {
+    errorMessage = 'Tento portál je určen pouze pro lékaře. Pro přístup jako administrátor použijte administrační portál.';
+  }
+
+  return <LoginPageContent initialError={errorMessage || error} />;
 }
 

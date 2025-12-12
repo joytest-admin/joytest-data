@@ -16,6 +16,7 @@ import PathogensByAgeGroupsChart from '@/src/components/PathogensByAgeGroupsChar
 import { getPositiveNegativeStatistics, getPositiveByAgeGroupsStatistics, getPositiveByPathogensStatistics, getPositiveTrendsByPathogensStatistics, getPathogenDistributionByScope, getPathogensByAgeGroupsStatistics, getCityById } from '@/src/lib/api-client';
 import { apiGet } from '@/src/lib/api-client';
 import { DoctorProfileResponse } from '@/src/types/api.types';
+import { useTokenValidation } from '@/src/lib/use-token-validation';
 
 type SortBy = 'created_at' | 'date_of_birth' | 'city' | 'test_type_name' | 'pathogen_name' | 'patient_identifier';
 type SortOrder = 'asc' | 'desc';
@@ -34,6 +35,9 @@ function TestsPageContent() {
   const searchParams = useSearchParams();
   const linkToken = searchParams.get('token');
   const { t } = useTranslation();
+
+  // Validate link token early - redirects if invalid
+  useTokenValidation(linkToken, false);
 
   const [testResults, setTestResults] = useState<TestResultResponse[]>([]);
   const [total, setTotal] = useState(0);

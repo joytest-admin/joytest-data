@@ -8,6 +8,7 @@ import { useTranslation } from '@/src/contexts/TranslationContext';
 import FeedbackModal from '@/src/components/FeedbackModal';
 import Header from '@/src/components/Header';
 import Link from 'next/link';
+import { useTokenValidation } from '@/src/lib/use-token-validation';
 
 /**
  * Helper to format date and time
@@ -48,6 +49,9 @@ function FeedbackPageContent() {
   const searchParams = useSearchParams();
   const linkToken = searchParams.get('token');
   const { t } = useTranslation();
+
+  // Validate link token early - redirects if invalid
+  useTokenValidation(linkToken, false);
 
   const getStatusLabel = (status: FeedbackResponse['status']): string => {
     const labels: Record<FeedbackResponse['status'], string> = {

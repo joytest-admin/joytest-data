@@ -334,6 +334,8 @@ export default function TestResultForm({
   }, [testTypeId, initialTestTypes, pathogens, pathogenId]);
 
   // Try to identify user by unique link token on mount
+  // Note: Server-side validation on main page should catch invalid tokens,
+  // but this provides a fallback and sets authentication state
   useEffect(() => {
   const identifyByToken = async () => {
     if (!linkToken || initialIsAuthenticated) {
@@ -354,10 +356,19 @@ export default function TestResultForm({
         // City part will be loaded from profile if available
         setError(null);
       } else {
-        setError(t.form.invalidLinkError);
+        // Invalid token - redirect to login (server-side validation should catch this, but fallback)
+        window.location.href = '/login?error=invalid_token';
       }
     } catch (err: any) {
-      setError(err.message || t.form.invalidLinkError);
+      // Check error message to determine specific issue
+      const errorMessage = err.message || '';
+      if (errorMessage.includes('schválení') || errorMessage.includes('pending') || errorMessage.includes('rejected')) {
+        window.location.href = '/login?error=account_pending';
+      } else if (errorMessage.includes('hesla') || errorMessage.includes('password')) {
+        window.location.href = '/login?error=password_required';
+      } else {
+        window.location.href = '/login?error=invalid_token';
+      }
     } finally {
       setLoading(false);
     }

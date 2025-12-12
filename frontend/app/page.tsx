@@ -6,6 +6,7 @@ import AuthSection from '@/src/components/AuthSection';
 import { backendGet } from '@/src/lib/backend-client';
 import { getDefaultLanguage, getTranslations } from '@/src/lib/translations';
 import { isUserToken } from '@/src/lib/jwt';
+import { validateLinkToken } from '@/src/lib/token-validator';
 import {
   ApiResponse,
   TestType,
@@ -45,6 +46,15 @@ export default async function HomePage({
   if (jwtToken && !isUserToken(jwtToken)) {
     // Admin user trying to access doctor portal - redirect to login with error
     redirect('/login?error=admin_detected');
+  }
+  
+  // If link token is provided (and no JWT), validate it before allowing access
+  if (linkToken && !jwtToken) {
+    const validation = await validateLinkToken(linkToken);
+    if (!validation.valid) {
+      // Invalid, pending, or rejected token - redirect to login with appropriate error
+      redirect(`/login?error=${validation.error || 'invalid_token'}`);
+    }
   }
   
   // If logged in with JWT, mark as authenticated

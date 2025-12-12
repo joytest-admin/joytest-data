@@ -89,8 +89,8 @@ export default function Header({
             </Link>
           </div>
 
-          {/* Center Block: Main Navigation */}
-          {isAuthenticated && (
+          {/* Center Block: Main Navigation - Show for both password and token authentication */}
+          {(isAuthenticated || linkToken) && (
             <nav className="hidden md:flex items-center gap-2 flex-1 justify-center">
               <Link
                 href={buildUrl('/')}
@@ -130,8 +130,8 @@ export default function Header({
             {/* Language Switcher */}
             <LanguageSwitcher />
 
-            {/* User Menu */}
-            {isAuthenticated ? (
+            {/* User Menu - Show for both password login (isAuthenticated) and token login (linkToken) */}
+            {isAuthenticated || linkToken ? (
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
@@ -195,31 +195,36 @@ export default function Header({
                       >
                         {t.header.feedback}
                       </Link>
-                      <div className="border-t border-gray-200 my-1"></div>
-                      <button
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          handleLogout();
-                        }}
-                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                      >
-                        {t.header.logout}
-                      </button>
+                      {/* Only show logout button for password-authenticated users (not token users) */}
+                      {isAuthenticated && (
+                        <>
+                          <div className="border-t border-gray-200 my-1"></div>
+                          <button
+                            onClick={() => {
+                              setUserMenuOpen(false);
+                              handleLogout();
+                            }}
+                            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                          >
+                            {t.header.logout}
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
-            ) : !linkToken ? (
+            ) : (
               <Link
                 href="/login"
                 className="px-3 sm:px-4 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
               >
                 {t.header.login}
               </Link>
-            ) : null}
+            )}
 
-            {/* Mobile: Show primary action if authenticated */}
-            {isAuthenticated && (
+            {/* Mobile: Show primary action if authenticated (password or token) */}
+            {(isAuthenticated || linkToken) && (
               <Link
                 href={buildUrl('/')}
                 className="md:hidden px-3 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"

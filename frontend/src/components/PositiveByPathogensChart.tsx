@@ -1,10 +1,10 @@
 'use client';
 
 /**
- * Bar chart component for displaying positive test results by pathogens
+ * Pie chart component for displaying positive test results by pathogens
  */
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { useTranslation } from '@/src/contexts/TranslationContext';
 
 interface PositiveByPathogensChartProps {
@@ -29,8 +29,20 @@ export default function PositiveByPathogensChart({ data, loading }: PositiveByPa
     '#14b8a6', // Teal
   ];
 
+  // Prepare data for the chart
+  const chartData = data.map((item) => ({
+    name: item.pathogenName,
+    value: item.count,
+  }));
+
   // Calculate total
   const total = data.reduce((sum, item) => sum + item.count, 0);
+
+  // Custom label function to show count and percentage
+  const renderLabel = (entry: any) => {
+    const percentage = total > 0 ? Math.round((entry.value / total) * 100) : 0;
+    return `${entry.value} (${percentage}%)`;
+  };
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload }: any) => {
@@ -51,10 +63,10 @@ export default function PositiveByPathogensChart({ data, loading }: PositiveByPa
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t.pages.testResults.charts.positiveByPathogens}</h3>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">{t.pages.testResults.charts.loading}</p>
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <h3 className="text-base font-semibold text-gray-900 mb-2">{t.pages.testResults.charts.positiveByPathogens}</h3>
+        <div className="flex items-center justify-center h-48">
+          <p className="text-gray-500 text-sm">{t.pages.testResults.charts.loading}</p>
         </div>
       </div>
     );
@@ -62,32 +74,45 @@ export default function PositiveByPathogensChart({ data, loading }: PositiveByPa
 
   if (data.length === 0 || total === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t.pages.testResults.charts.positiveByPathogens}</h3>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">{t.pages.testResults.charts.noData}</p>
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <h3 className="text-base font-semibold text-gray-900 mb-2">{t.pages.testResults.charts.positiveByPathogens}</h3>
+        <div className="flex items-center justify-center h-48">
+          <p className="text-gray-500 text-sm">{t.pages.testResults.charts.noData}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">{t.pages.testResults.charts.positiveByPathogens}</h3>
+    <div className="bg-white rounded-lg shadow-sm p-4">
+      <h3 className="text-base font-semibold text-gray-900 mb-2">{t.pages.testResults.charts.positiveByPathogens}</h3>
       <div className="w-full">
-        <ResponsiveContainer width="100%" height={Math.max(300, data.length * 50)}>
-          <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis type="number" />
-            <YAxis dataKey="pathogenName" type="category" width={90} />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            <Bar dataKey="count" name={t.pages.testResults.charts.positive}>
-              {data.map((entry, index) => (
+        <ResponsiveContainer width="100%" height={220}>
+          <PieChart>
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={renderLabel}
+              outerRadius={75}
+              fill="#8884d8"
+              dataKey="value"
+            >
+              {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
-            </Bar>
-          </BarChart>
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+            <Legend
+              formatter={(value) => {
+                const entry = chartData.find((d) => d.name === value);
+                if (!entry) return value;
+                const percentage = total > 0 ? Math.round((entry.value / total) * 100) : 0;
+                return `${value}: ${entry.value} (${percentage}%)`;
+              }}
+            />
+          </PieChart>
         </ResponsiveContainer>
       </div>
     </div>

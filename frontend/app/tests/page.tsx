@@ -676,6 +676,67 @@ function TestsPageContent() {
             )}
           </div>
 
+          {/* Charts Section - Moved above results */}
+          <div className="mt-6 space-y-8">
+            {/* Moje výsledky Section */}
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Moje výsledky</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <PositiveNegativeChart
+                  positive={statistics?.positive || 0}
+                  negative={statistics?.negative || 0}
+                  loading={statisticsLoading}
+                />
+                <PositiveByPathogensChart
+                  data={pathogensStatistics}
+                  loading={pathogensLoading}
+                />
+                <PositiveByAgeGroupsChart
+                  age0to5={ageGroupsStatistics?.age0to5 || 0}
+                  age6to14={ageGroupsStatistics?.age6to14 || 0}
+                  age15to24={ageGroupsStatistics?.age15to24 || 0}
+                  age25to64={ageGroupsStatistics?.age25to64 || 0}
+                  age65plus={ageGroupsStatistics?.age65plus || 0}
+                  loading={ageGroupsLoading}
+                />
+              </div>
+            </div>
+
+            {/* Celkové výsledky - porovnání s kolegy v ČR a regionu Section */}
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Celkové výsledky - porovnání s kolegy v ČR a regionu</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <PositiveTrendsChart
+                  byPathogen={trendsStatistics.byPathogen}
+                  total={trendsStatistics.total}
+                  period={trendsPeriod}
+                  onPeriodChange={setTrendsPeriod}
+                  allDoctors={trendsAllDoctors}
+                  onAllDoctorsChange={setTrendsAllDoctors}
+                  regionId={trendsRegionId}
+                  onRegionChange={setTrendsRegionId}
+                  cityId={trendsCityId}
+                  onCityChange={setTrendsCityId}
+                  loading={trendsLoading}
+                />
+                <PathogenDistributionChart
+                  me={distributionStatistics.me}
+                  district={distributionStatistics.district}
+                  region={distributionStatistics.region}
+                  country={distributionStatistics.country}
+                  regionId={distributionRegionId}
+                  onRegionChange={setDistributionRegionId}
+                  cityId={distributionCityId}
+                  onCityChange={setDistributionCityId}
+                  loading={distributionLoading}
+                />
+                <PathogensByAgeGroupsChart
+                  data={pathogensByAgeGroupsStatistics}
+                  loading={pathogensByAgeGroupsLoading}
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Results */}
           {loading ? (
@@ -849,55 +910,6 @@ function TestsPageContent() {
               )}
             </>
           )}
-
-          {/* Charts Section */}
-          <div className="mt-6 space-y-6">
-            <PositiveNegativeChart
-              positive={statistics?.positive || 0}
-              negative={statistics?.negative || 0}
-              loading={statisticsLoading}
-            />
-            <PositiveByAgeGroupsChart
-              age0to5={ageGroupsStatistics?.age0to5 || 0}
-              age6to14={ageGroupsStatistics?.age6to14 || 0}
-              age15to24={ageGroupsStatistics?.age15to24 || 0}
-              age25to64={ageGroupsStatistics?.age25to64 || 0}
-              age65plus={ageGroupsStatistics?.age65plus || 0}
-              loading={ageGroupsLoading}
-            />
-            <PositiveByPathogensChart
-              data={pathogensStatistics}
-              loading={pathogensLoading}
-            />
-            <PositiveTrendsChart
-              byPathogen={trendsStatistics.byPathogen}
-              total={trendsStatistics.total}
-              period={trendsPeriod}
-              onPeriodChange={setTrendsPeriod}
-              allDoctors={trendsAllDoctors}
-              onAllDoctorsChange={setTrendsAllDoctors}
-              regionId={trendsRegionId}
-              onRegionChange={setTrendsRegionId}
-              cityId={trendsCityId}
-              onCityChange={setTrendsCityId}
-              loading={trendsLoading}
-            />
-            <PathogenDistributionChart
-              me={distributionStatistics.me}
-              district={distributionStatistics.district}
-              region={distributionStatistics.region}
-              country={distributionStatistics.country}
-              regionId={distributionRegionId}
-              onRegionChange={setDistributionRegionId}
-              cityId={distributionCityId}
-              onCityChange={setDistributionCityId}
-              loading={distributionLoading}
-            />
-            <PathogensByAgeGroupsChart
-              data={pathogensByAgeGroupsStatistics}
-              loading={pathogensByAgeGroupsLoading}
-            />
-          </div>
       </div>
     </main>
   </div>

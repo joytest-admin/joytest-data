@@ -184,7 +184,7 @@ export default function PathogenDistributionChart({
             <p className="text-gray-500 text-sm">{t.pages.testResults.charts.noData}</p>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={200}>
+          <ResponsiveContainer width="100%" height={160}>
             <PieChart>
               <Pie
                 data={data}
@@ -193,7 +193,7 @@ export default function PathogenDistributionChart({
                 labelLine={false}
                 label={({ name, payload }) => {
                   const percentage = payload?.total > 0 ? ((payload?.value || 0) / payload.total * 100) : 0;
-                  return `${name}: ${percentage.toFixed(1)}%`;
+                  return `${name}: ${Math.round(percentage)}%`;
                 }}
                 outerRadius={80}
                 fill="#8884d8"
@@ -213,14 +213,14 @@ export default function PathogenDistributionChart({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">{t.pages.testResults.charts.pathogenDistribution}</h3>
-          <p className="text-sm text-gray-600 mt-1">{t.pages.testResults.charts.comparison}</p>
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="mb-3">
+          <h3 className="text-base font-semibold text-gray-900">{t.pages.testResults.charts.pathogenDistribution}</h3>
+          <p className="text-xs text-gray-600 mt-1">{t.pages.testResults.charts.comparison}</p>
         </div>
 
         {/* Geographic filters */}
-        <div className="flex items-center gap-4 flex-wrap mb-4">
+        <div className="flex items-center gap-4 flex-wrap mb-3">
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-gray-700">{t.pages.testResults.charts.region}:</label>
             <select
@@ -256,8 +256,8 @@ export default function PathogenDistributionChart({
           </div>
         </div>
 
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">{t.pages.testResults.charts.loading}</p>
+        <div className="flex items-center justify-center h-48">
+          <p className="text-gray-500 text-sm">{t.pages.testResults.charts.loading}</p>
         </div>
       </div>
     );
@@ -272,14 +272,14 @@ export default function PathogenDistributionChart({
 
   if (!hasAnyData) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">{t.pages.testResults.charts.pathogenDistribution}</h3>
-          <p className="text-sm text-gray-600 mt-1">{t.pages.testResults.charts.comparison}</p>
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="mb-3">
+          <h3 className="text-base font-semibold text-gray-900">{t.pages.testResults.charts.pathogenDistribution}</h3>
+          <p className="text-xs text-gray-600 mt-1">{t.pages.testResults.charts.comparison}</p>
         </div>
 
         {/* Geographic filters */}
-        <div className="flex items-center gap-4 flex-wrap mb-4">
+        <div className="flex items-center gap-4 flex-wrap mb-3">
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-gray-700">{t.pages.testResults.charts.region}:</label>
             <select
@@ -315,21 +315,21 @@ export default function PathogenDistributionChart({
           </div>
         </div>
 
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">{t.pages.testResults.charts.noData}</p>
+        <div className="flex items-center justify-center h-48">
+          <p className="text-gray-500 text-sm">{t.pages.testResults.charts.noData}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">{t.pages.testResults.charts.pathogenDistribution}</h3>
-        <p className="text-sm text-gray-600 mt-1">{t.pages.testResults.charts.comparison}</p>
+    <div className="bg-white rounded-lg shadow-sm p-4">
+      <div className="mb-3">
+        <h3 className="text-base font-semibold text-gray-900">{t.pages.testResults.charts.pathogenDistribution}</h3>
+        <p className="text-xs text-gray-600 mt-1">{t.pages.testResults.charts.comparison}</p>
 
         {/* Geographic filters */}
-        <div className="flex items-center gap-4 flex-wrap mt-4">
+        <div className="flex items-center gap-4 flex-wrap mt-3">
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-gray-700">{t.pages.testResults.charts.region}:</label>
             <select

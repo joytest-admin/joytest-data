@@ -187,10 +187,10 @@ export default function PositiveTrendsChart({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">{t.pages.testResults.charts.positiveTrends}</h3>
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-base font-semibold text-gray-900">{t.pages.testResults.charts.positiveTrends}</h3>
             <div className="flex gap-2">
               <button
                 onClick={() => onPeriodChange('day')}
@@ -278,8 +278,8 @@ export default function PositiveTrendsChart({
             </div>
           </div>
         </div>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">{t.pages.testResults.charts.loading}</p>
+        <div className="flex items-center justify-center h-48">
+          <p className="text-gray-500 text-sm">{t.pages.testResults.charts.loading}</p>
         </div>
       </div>
     );
@@ -287,10 +287,10 @@ export default function PositiveTrendsChart({
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">{t.pages.testResults.charts.positiveTrends}</h3>
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-base font-semibold text-gray-900">{t.pages.testResults.charts.positiveTrends}</h3>
             <div className="flex gap-2">
               <button
                 onClick={() => onPeriodChange('day')}
@@ -378,18 +378,18 @@ export default function PositiveTrendsChart({
             </div>
           </div>
         </div>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">{t.pages.testResults.charts.noData}</p>
+        <div className="flex items-center justify-center h-48">
+          <p className="text-gray-500 text-sm">{t.pages.testResults.charts.noData}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">{t.pages.testResults.charts.positiveTrends}</h3>
+    <div className="bg-white rounded-lg shadow-sm p-4">
+      <div className="mb-3">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-base font-semibold text-gray-900">{t.pages.testResults.charts.positiveTrends}</h3>
           <div className="flex gap-2">
             <button
               onClick={() => onPeriodChange('day')}
@@ -419,7 +419,7 @@ export default function PositiveTrendsChart({
         </div>
 
         {/* Doctor scope toggle */}
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-4 mb-3">
           <div className="flex gap-2">
             <button
               onClick={() => onAllDoctorsChange(false)}
@@ -478,10 +478,10 @@ export default function PositiveTrendsChart({
         </div>
       </div>
       <div className="w-full">
-        <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+        <ResponsiveContainer width="100%" height={250}>
+          <LineChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 60 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" angle={-45} textAnchor="end" height={80} />
+            <XAxis dataKey="date" angle={-45} textAnchor="end" height={60} />
             <YAxis />
             <Tooltip content={<CustomTooltip />} />
             <Legend />

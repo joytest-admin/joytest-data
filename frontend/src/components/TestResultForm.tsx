@@ -114,6 +114,31 @@ export default function TestResultForm({
     return '';
   };
 
+  // Helper to get last city from localStorage
+  const getLastCityFromStorage = async (): Promise<CityResponse | null> => {
+    if (typeof window !== 'undefined') {
+      try {
+        const lastCityId = localStorage.getItem('lastCityId');
+        if (lastCityId) {
+          // Try to load the city by ID to verify it still exists
+          try {
+            const city = await getCityById(parseInt(lastCityId, 10));
+            if (city) {
+              return city;
+            }
+          } catch (err) {
+            // City doesn't exist or failed to load - clear from storage
+            localStorage.removeItem('lastCityId');
+          }
+        }
+      } catch (error) {
+        // Handle localStorage errors (e.g., quota exceeded, disabled)
+        console.warn('Failed to load last city from localStorage:', error);
+      }
+    }
+    return null;
+  };
+
   // Helper to get initial test type (from initialData or localStorage)
   const getInitialTestTypeId = (): string => {
     // Edit mode: always use initialData
@@ -175,9 +200,10 @@ export default function TestResultForm({
   const cityInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  // Load initial city from profile or initialData
+  // Load initial city from profile, initialData, or localStorage
   useEffect(() => {
     const loadInitialCity = async () => {
+      // Priority: initialData > profileCityId > localStorage (for new forms only)
       const cityIdToLoad = initialData?.cityId || profileCityId;
       if (cityIdToLoad) {
         setLoadingInitialCity(true);
@@ -189,6 +215,20 @@ export default function TestResultForm({
           }
         } catch (err) {
           console.error('Failed to load initial city:', err);
+        } finally {
+          setLoadingInitialCity(false);
+        }
+      } else if (!initialData && !profileCityId) {
+        // New form with no profile city: try to load from localStorage
+        setLoadingInitialCity(true);
+        try {
+          const lastCity = await getLastCityFromStorage();
+          if (lastCity) {
+            setSelectedCity(lastCity);
+            setCitySearchQuery(lastCity.name);
+          }
+        } catch (err) {
+          console.error('Failed to load last city from localStorage:', err);
         } finally {
           setLoadingInitialCity(false);
         }
@@ -523,6 +563,16 @@ export default function TestResultForm({
           }
         }
 
+        // Save last selected city to localStorage (for new forms only)
+        if (selectedCity && !isEditMode && typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('lastCityId', selectedCity.id.toString());
+          } catch (error) {
+            // Handle localStorage errors gracefully
+            console.warn('Failed to save last city to localStorage:', error);
+          }
+        }
+
         // Sync yearOfBirth to patient if patient is selected and doesn't have it
         // This allows creating patient without yearOfBirth, then filling it later when submitting test result
         if (patientId && selectedPatient && yearOfBirth && !selectedPatient.yearOfBirth) {
@@ -563,8 +613,19 @@ export default function TestResultForm({
           setTestTypeId(getLastTestTypeFromStorage());
           setResult('');
           setYearOfBirth('');
-          setCitySearchQuery('');
-          setSelectedCity(null);
+          // Reload city from localStorage (or empty if not available)
+          getLastCityFromStorage().then((lastCity) => {
+            if (lastCity) {
+              setSelectedCity(lastCity);
+              setCitySearchQuery(lastCity.name);
+            } else {
+              setCitySearchQuery('');
+              setSelectedCity(null);
+            }
+          }).catch(() => {
+            setCitySearchQuery('');
+            setSelectedCity(null);
+          });
           setTestDate(new Date().toISOString().split('T')[0]);
           setTemperature('');
           setSelectedSymptoms([]);
@@ -833,6 +894,15 @@ export default function TestResultForm({
                           setCitySearchQuery(city.name);
                           setShowCitySuggestions(false);
                           setCitySuggestions([]);
+                          // Save to localStorage when user selects a city
+                          if (typeof window !== 'undefined' && !isEditMode) {
+                            try {
+                              localStorage.setItem('lastCityId', city.id.toString());
+                            } catch (error) {
+                              // Handle localStorage errors gracefully
+                              console.warn('Failed to save last city to localStorage:', error);
+                            }
+                          }
                         }}
                         className="w-full px-4 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
                       >

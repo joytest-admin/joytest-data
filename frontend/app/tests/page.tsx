@@ -705,7 +705,8 @@ function TestsPageContent() {
             {/* Celkové výsledky - porovnání s kolegy v ČR a regionu Section */}
             <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Celkové výsledky - porovnání s kolegy v ČR a regionu</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Trend chart on separate row */}
+              <div className="mb-4">
                 <PositiveTrendsChart
                   byPathogen={trendsStatistics.byPathogen}
                   total={trendsStatistics.total}
@@ -719,6 +720,13 @@ function TestsPageContent() {
                   onCityChange={setTrendsCityId}
                   loading={trendsLoading}
                 />
+              </div>
+              {/* Other charts in grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                <PathogensByAgeGroupsChart
+                  data={pathogensByAgeGroupsStatistics}
+                  loading={pathogensByAgeGroupsLoading}
+                />
                 <PathogenDistributionChart
                   me={distributionStatistics.me}
                   district={distributionStatistics.district}
@@ -729,10 +737,6 @@ function TestsPageContent() {
                   cityId={distributionCityId}
                   onCityChange={setDistributionCityId}
                   loading={distributionLoading}
-                />
-                <PathogensByAgeGroupsChart
-                  data={pathogensByAgeGroupsStatistics}
-                  loading={pathogensByAgeGroupsLoading}
                 />
               </div>
             </div>

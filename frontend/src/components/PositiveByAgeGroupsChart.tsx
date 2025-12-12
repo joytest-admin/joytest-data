@@ -4,7 +4,7 @@
  * Bar chart component for displaying positive test results by age groups
  */
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useTranslation } from '@/src/contexts/TranslationContext';
 
 interface PositiveByAgeGroupsChartProps {
@@ -94,9 +94,8 @@ export default function PositiveByAgeGroupsChart({
           <BarChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 60 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} />
-            <YAxis />
+            <YAxis tickFormatter={(value) => Math.round(value).toString()} />
             <Tooltip content={<CustomTooltip />} />
-            <Legend />
             <Bar dataKey="value" name={t.pages.testResults.charts.positive}>
               {data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

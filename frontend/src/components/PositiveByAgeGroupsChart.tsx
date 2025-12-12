@@ -94,7 +94,11 @@ export default function PositiveByAgeGroupsChart({
           <BarChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 60 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} />
-            <YAxis tickFormatter={(value) => Math.round(value).toString()} />
+            <YAxis 
+              tickFormatter={(value) => Math.round(value).toString()}
+              domain={[0, 'dataMax']}
+              allowDecimals={false}
+            />
             <Tooltip content={<CustomTooltip />} />
             <Bar dataKey="value" name={t.pages.testResults.charts.positive}>
               {data.map((entry, index) => (

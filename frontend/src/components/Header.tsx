@@ -8,9 +8,10 @@
  */
 
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '@/src/contexts/TranslationContext';
+import { apiPost } from '@/src/lib/api-client';
 import LanguageSwitcher from './LanguageSwitcher';
 
 interface HeaderProps {
@@ -25,6 +26,7 @@ export default function Header({
   const { t } = useTranslation();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -55,6 +57,19 @@ export default function Header({
 
   // Get user email/name for display (simplified - could be enhanced with profile data)
   const userDisplayName = isAuthenticated ? 'Uživatel' : null;
+
+  // Handle logout - call API and redirect to login page
+  const handleLogout = async () => {
+    try {
+      await apiPost('/auth/logout');
+      router.push('/login');
+      router.refresh();
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Even if logout fails, redirect to login page
+      router.push('/login');
+    }
+  };
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -181,14 +196,15 @@ export default function Header({
                         {t.header.feedback}
                       </Link>
                       <div className="border-t border-gray-200 my-1"></div>
-                      <form action="/api/auth/logout" method="POST">
-                        <button
-                          type="submit"
-                          className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                        >
-                          {t.header.logout}
-                        </button>
-                      </form>
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          handleLogout();
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                      >
+                        {t.header.logout}
+                      </button>
                     </div>
                   </div>
                 )}

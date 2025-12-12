@@ -1,9 +1,11 @@
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import TestResultForm from '@/src/components/TestResultForm';
 import Header from '@/src/components/Header';
 import AuthSection from '@/src/components/AuthSection';
 import { backendGet } from '@/src/lib/backend-client';
 import { getDefaultLanguage, getTranslations } from '@/src/lib/translations';
+import { isUserToken } from '@/src/lib/jwt';
 import {
   ApiResponse,
   TestType,
@@ -18,6 +20,7 @@ import {
  * Supports authentication via:
  * - JWT token (from cookie, for logged-in users)
  * - Unique link token (from URL query parameter, for passwordless users)
+ * Prevents admin users from accessing doctor portal
  */
 type SearchParams =
   | { token?: string }
@@ -37,6 +40,12 @@ export default async function HomePage({
   
   // Extract unique link token from URL if present
   const linkToken = resolvedSearchParams?.token ?? null;
+  
+  // If logged in with JWT, check if user is a doctor (not admin)
+  if (jwtToken && !isUserToken(jwtToken)) {
+    // Admin user trying to access doctor portal - redirect to login with error
+    redirect('/login?error=admin_detected');
+  }
   
   // If logged in with JWT, mark as authenticated
   const isAuthenticated = !!jwtToken;

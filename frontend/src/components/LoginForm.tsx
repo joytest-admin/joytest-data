@@ -1,21 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiPost } from '@/src/lib/api-client';
 import { LoginRequest, ApiResponse, AuthResponse } from '@/src/types/api.types';
 import { useTranslation } from '@/src/contexts/TranslationContext';
 
+interface LoginFormProps {
+  initialError?: string;
+}
+
 /**
  * Login form component for doctors
  */
-export default function LoginForm() {
+export default function LoginForm({ initialError }: LoginFormProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError || null);
   const [loading, setLoading] = useState(false);
+
+  // Set initial error from query parameter
+  useEffect(() => {
+    if (initialError === 'admin_detected') {
+      setError('Tento portál je určen pouze pro lékaře. Pro přístup jako administrátor použijte administrační portál.');
+    } else if (initialError) {
+      setError(initialError);
+    }
+  }, [initialError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +50,9 @@ export default function LoginForm() {
         const errorMessage = response.error?.message || '';
         if (errorMessage.toLowerCase().includes('invalid credentials')) {
           setError(t.auth.login.invalidCredentials);
+        } else if (errorMessage.toLowerCase().includes('admin') || errorMessage.toLowerCase().includes('doctor')) {
+          // Admin trying to access doctor portal
+          setError('Tento portál je určen pouze pro lékaře. Pro přístup jako administrátor použijte administrační portál.');
         } else {
           setError(errorMessage || t.auth.login.loginFailed);
         }
@@ -46,6 +62,9 @@ export default function LoginForm() {
       const errorMessage = err.message || '';
       if (errorMessage.toLowerCase().includes('invalid credentials')) {
         setError(t.auth.login.invalidCredentials);
+      } else if (errorMessage.toLowerCase().includes('admin') || errorMessage.toLowerCase().includes('doctor')) {
+        // Admin trying to access doctor portal
+        setError('Tento portál je určen pouze pro lékaře. Pro přístup jako administrátor použijte administrační portál.');
       } else {
         setError(errorMessage || t.auth.login.loginFailed);
       }

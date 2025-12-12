@@ -88,14 +88,13 @@ export default function PositiveByPathogensChart({ data, loading }: PositiveByPa
       <h3 className="text-base font-semibold text-gray-900 mb-2">{t.pages.testResults.charts.positiveByPathogens}</h3>
       <div className="w-full">
         <ResponsiveContainer width="100%" height={220}>
-          <PieChart>
+          <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
             <Pie
               data={chartData}
               cx="50%"
-              cy="50%"
+              cy="45%"
               labelLine={false}
-              label={renderLabel}
-              outerRadius={75}
+              outerRadius={70}
               fill="#8884d8"
               dataKey="value"
             >
@@ -105,6 +104,9 @@ export default function PositiveByPathogensChart({ data, loading }: PositiveByPa
             </Pie>
             <Tooltip content={<CustomTooltip />} />
             <Legend
+              verticalAlign="bottom"
+              height={36}
+              wrapperStyle={{ fontSize: '12px' }}
               formatter={(value) => {
                 const entry = chartData.find((d) => d.name === value);
                 if (!entry) return value;

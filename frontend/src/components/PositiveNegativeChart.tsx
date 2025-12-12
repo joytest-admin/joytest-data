@@ -80,14 +80,13 @@ export default function PositiveNegativeChart({ positive, negative, loading }: P
       <h3 className="text-base font-semibold text-gray-900 mb-2">{t.pages.testResults.charts.positiveNegative}</h3>
       <div className="w-full">
         <ResponsiveContainer width="100%" height={220}>
-          <PieChart>
+          <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
             <Pie
               data={data}
               cx="50%"
-              cy="50%"
+              cy="45%"
               labelLine={false}
-              label={renderLabel}
-              outerRadius={75}
+              outerRadius={70}
               fill="#8884d8"
               dataKey="value"
             >
@@ -97,6 +96,8 @@ export default function PositiveNegativeChart({ positive, negative, loading }: P
             </Pie>
             <Tooltip content={<CustomTooltip />} />
             <Legend
+              verticalAlign="bottom"
+              height={36}
               formatter={(value) => {
                 const entry = data.find((d) => d.name === value);
                 if (!entry) return value;

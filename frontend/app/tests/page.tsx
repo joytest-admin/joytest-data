@@ -73,7 +73,7 @@ function TestsPageContent() {
   const [sortBy, setSortBy] = useState<SortBy>((searchParams.get('sortBy') as SortBy) || 'created_at');
   const [sortOrder, setSortOrder] = useState<SortOrder>((searchParams.get('sortOrder') as SortOrder) || 'desc');
   const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1', 10));
-  const [pageSize] = useState(20);
+  const [pageSize] = useState(10);
 
   // Export state
   const [exportType, setExportType] = useState<'interval' | 'patient' | null>(null);
@@ -427,6 +427,12 @@ function TestsPageContent() {
     return new Date(dateOfBirth).getFullYear();
   };
 
+  const truncateTestType = (testTypeName: string | null | undefined, maxLength: number = 20): string => {
+    if (!testTypeName) return '-';
+    if (testTypeName.length <= maxLength) return testTypeName;
+    return testTypeName.substring(0, maxLength) + '...';
+  };
+
   // Export handler - uses current filters (city and/or dates, or all if no filters)
   const handleExport = async () => {
     setExportLoading(true);
@@ -776,8 +782,8 @@ function TestsPageContent() {
                             <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {formatDateTime(result.createdAt)}
                             </td>
-                            <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {result.testTypeName || '-'}
+                            <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900" title={result.testTypeName || ''}>
+                              {truncateTestType(result.testTypeName)}
                             </td>
                             <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {result.pathogenName || '-'}

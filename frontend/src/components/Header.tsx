@@ -28,7 +28,9 @@ export default function Header({
   const searchParams = useSearchParams();
   const router = useRouter();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -36,13 +38,16 @@ export default function Header({
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setUserMenuOpen(false);
       }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
+        setMobileMenuOpen(false);
+      }
     };
 
-    if (userMenuOpen) {
+    if (userMenuOpen || mobileMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [userMenuOpen]);
+  }, [userMenuOpen, mobileMenuOpen]);
 
   // Build URL with token if present
   const buildUrl = (path: string) => {
@@ -89,7 +94,7 @@ export default function Header({
             </Link>
           </div>
 
-          {/* Center Block: Main Navigation - Show for both password and token authentication */}
+          {/* Center Block: Main Navigation - Desktop only */}
           {(isAuthenticated || linkToken) && (
             <nav className="hidden md:flex items-center gap-2 flex-1 justify-center">
               <Link
@@ -115,9 +120,41 @@ export default function Header({
             </nav>
           )}
 
-          {/* Right Block: Purchase, Language, User Menu */}
+          {/* Right Block: Purchase, Language, User Menu, Mobile Menu Button */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Purchase Button */}
+            {/* Mobile Menu Button - Only show on mobile when authenticated */}
+            {(isAuthenticated || linkToken) && (
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+                aria-label="Menu"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-6 h-6"
+                >
+                  {mobileMenuOpen ? (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  ) : (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+                    />
+                  )}
+                </svg>
+              </button>
+            )}
+
+            {/* Purchase Button - Show on sm and up */}
             <a
               href="https://joymed.cz"
               target="_blank"
@@ -222,18 +259,87 @@ export default function Header({
                 {t.header.login}
               </Link>
             )}
+          </div>
+        </div>
 
-            {/* Mobile: Show primary action if authenticated (password or token) */}
-            {(isAuthenticated || linkToken) && (
+        {/* Mobile Menu - Dropdown below header */}
+        {mobileMenuOpen && (isAuthenticated || linkToken) && (
+          <div
+            ref={mobileMenuRef}
+            className="md:hidden border-t border-gray-200 bg-white"
+          >
+            <div className="px-3 py-2 space-y-1">
               <Link
                 href={buildUrl('/')}
-                className="md:hidden px-3 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-4 py-3 rounded-md text-base font-medium transition-colors ${
+                  isHomePage
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
               >
                 {t.header.newReport}
               </Link>
-            )}
+              <Link
+                href={buildUrl('/tests')}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-4 py-3 rounded-md text-base font-medium transition-colors ${
+                  isTestsPage
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                {t.header.testResults}
+              </Link>
+              <a
+                href="https://joymed.cz"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-3 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 border border-gray-300"
+              >
+                {t.header.buyTests}
+              </a>
+              <div className="border-t border-gray-200 my-2"></div>
+              <Link
+                href={buildUrl('/settings')}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-4 py-3 rounded-md text-base font-medium ${
+                  isSettingsPage
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                {t.header.settings}
+              </Link>
+              <Link
+                href={buildUrl('/feedback')}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-4 py-3 rounded-md text-base font-medium ${
+                  isFeedbackPage
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                {t.header.feedback}
+              </Link>
+              {isAuthenticated && (
+                <>
+                  <div className="border-t border-gray-200 my-2"></div>
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      handleLogout();
+                    }}
+                    className="block w-full text-left px-4 py-3 rounded-md text-base font-medium text-red-600 hover:bg-gray-100"
+                  >
+                    {t.header.logout}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </header>
   );

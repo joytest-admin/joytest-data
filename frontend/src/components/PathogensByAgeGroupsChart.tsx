@@ -66,10 +66,11 @@ export default function PathogensByAgeGroupsChart({ data, loading }: PathogensBy
           <p className="font-semibold text-gray-900 mb-2">{label}</p>
           {payload.map((entry: any, index: number) => {
             if (entry.value === 0) return null;
-            const percentage = total > 0 ? Math.round((entry.value / total) * 100) : 0;
+            const value = Math.round(entry.value); // Ensure whole number
+            const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
             return (
               <p key={index} className="text-sm text-gray-600" style={{ color: entry.color }}>
-                {entry.name}: {entry.value} {t.pages.testResults.results} ({percentage}%)
+                {entry.name}: {value} {t.pages.testResults.results} ({percentage}%)
               </p>
             );
           })}
@@ -106,12 +107,24 @@ export default function PathogensByAgeGroupsChart({ data, loading }: PathogensBy
       <h3 className="text-base font-semibold text-gray-900 mb-2">{t.pages.testResults.charts.pathogensByAgeGroups}</h3>
       <div className="w-full">
         <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 60 }}>
+          <BarChart 
+            data={chartData} 
+            margin={{ top: 5, right: 20, left: 10, bottom: 60 }}
+            barCategoryGap="10%"
+            barGap={4}
+          >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="ageGroup" angle={-45} textAnchor="end" height={60} />
-            <YAxis />
+            <YAxis 
+              tickFormatter={(value) => Math.round(value).toString()}
+              domain={[0, 'dataMax']}
+              allowDecimals={false}
+            />
             <Tooltip content={<CustomTooltip />} />
-            <Legend />
+            <Legend 
+              wrapperStyle={{ fontSize: '12px' }}
+              iconSize={12}
+            />
             {pathogens.map((pathogen, index) => (
               <Bar key={pathogen} dataKey={pathogen} name={pathogen} fill={COLORS[index % COLORS.length]} />
             ))}

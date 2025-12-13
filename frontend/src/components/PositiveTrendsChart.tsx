@@ -160,7 +160,10 @@ export default function PositiveTrendsChart({
   function formatDate(dateString: string, period: 'day' | 'week' | 'month'): string {
     const date = new Date(dateString);
     if (period === 'month') {
-      return date.toLocaleDateString('cs-CZ', { month: 'short', year: 'numeric' });
+      // Format as MM/YY (e.g., "10/25" for November 2025)
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear().toString().slice(-2);
+      return `${month}/${year}`;
     } else if (period === 'week') {
       return date.toLocaleDateString('cs-CZ', { month: 'short', day: 'numeric' });
     } else {

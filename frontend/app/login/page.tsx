@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import LoginPageContent from '@/src/components/LoginPageContent';
-import { isUserToken } from '@/src/lib/jwt';
+import { isUserToken, isValidToken } from '@/src/lib/jwt';
 
 type SearchParams = { error?: string } | Promise<{ error?: string }>;
 
@@ -18,19 +18,26 @@ export default async function LoginPage({
   const cookieStore = await cookies();
   const token = cookieStore.get('auth_token')?.value;
   
+  // Resolve searchParams if it's a Promise (Next.js 15+)
+  const resolvedParams = searchParams instanceof Promise ? await searchParams : searchParams;
+  const error = resolvedParams?.error;
+  
+  // If token exists but is invalid, and we're not already showing an error, redirect with error
+  // This prevents infinite redirect loops
+  if (token && !isValidToken(token) && error !== 'invalid_token') {
+    // Invalid token - redirect to login with error
+    redirect('/login?error=invalid_token');
+  }
+  
   // If already logged in as doctor, redirect to form
   if (token && isUserToken(token)) {
     redirect('/');
   }
 
   // If logged in as admin, redirect with error
-  if (token && !isUserToken(token)) {
+  if (token && isValidToken(token) && !isUserToken(token)) {
     redirect('/login?error=admin_detected');
   }
-
-  // Resolve searchParams if it's a Promise (Next.js 15+)
-  const resolvedParams = searchParams instanceof Promise ? await searchParams : searchParams;
-  const error = resolvedParams?.error;
 
   // Map error codes to user-friendly messages
   let errorMessage: string | undefined;

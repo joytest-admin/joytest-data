@@ -7,7 +7,7 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import Navigation from '@/src/components/Navigation';
-import { isAdminToken } from '@/src/lib/jwt';
+import { isAdminToken, isValidToken } from '@/src/lib/jwt';
 
 export default async function ProtectedLayout({
   children,
@@ -22,9 +22,15 @@ export default async function ProtectedLayout({
     redirect('/login');
   }
 
+  // If token exists but is invalid, redirect to login
+  if (!isValidToken(token)) {
+    // Invalid token - redirect to login
+    redirect('/login?error=invalid_token');
+  }
+
   // Check if user is admin - decode token and verify role
   if (!isAdminToken(token)) {
-    // Clear invalid token cookie and redirect with error
+    // Valid token but not admin - redirect with error
     redirect('/login?error=admin_required');
   }
 

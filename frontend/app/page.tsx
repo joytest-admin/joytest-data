@@ -5,7 +5,7 @@ import Header from '@/src/components/Header';
 import AuthSection from '@/src/components/AuthSection';
 import { backendGet } from '@/src/lib/backend-client';
 import { getDefaultLanguage, getTranslations } from '@/src/lib/translations';
-import { isUserToken } from '@/src/lib/jwt';
+import { isUserToken, isValidToken } from '@/src/lib/jwt';
 import { validateLinkToken } from '@/src/lib/token-validator';
 import {
   ApiResponse,
@@ -42,8 +42,14 @@ export default async function HomePage({
   // Extract unique link token from URL if present
   const linkToken = resolvedSearchParams?.token ?? null;
   
-  // If logged in with JWT, check if user is a doctor (not admin)
-  if (jwtToken && !isUserToken(jwtToken)) {
+  // If JWT token exists but is invalid, redirect to login
+  if (jwtToken && !isValidToken(jwtToken)) {
+    // Invalid token - redirect to login with error
+    redirect('/login?error=invalid_token');
+  }
+  
+  // If logged in with valid JWT, check if user is a doctor (not admin)
+  if (jwtToken && isValidToken(jwtToken) && !isUserToken(jwtToken)) {
     // Admin user trying to access doctor portal - redirect to login with error
     redirect('/login?error=admin_detected');
   }

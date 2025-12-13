@@ -50,9 +50,18 @@ export function isUserToken(token: string): boolean {
 }
 
 /**
+ * Check if token is valid (can be decoded)
+ * @param token - JWT token string
+ * @returns True if token can be decoded, false otherwise
+ */
+export function isValidToken(token: string): boolean {
+  return decodeToken(token) !== null;
+}
+
+/**
  * Check if token belongs to an admin user
  * @param token - JWT token string
- * @returns True if user is admin, false otherwise
+ * @returns True if user is admin, false otherwise (returns false for invalid tokens)
  */
 export function isAdminToken(token: string): boolean {
   const payload = decodeToken(token);

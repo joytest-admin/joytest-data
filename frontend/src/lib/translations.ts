@@ -380,7 +380,7 @@ export const translations: Record<LanguageCode, Translations> = {
           selectCity: 'Vyberte město',
           region: 'Region',
           city: 'Město',
-          pathogenDistribution: 'Rozložení pozitivních patogenů',
+          pathogenDistribution: 'Podíl pozitivních patogenů',
           pathogensByAgeGroups: 'Pozitivní patogeny podle věkových skupin (celá ČR)',
           me: 'Já',
           district: 'Okres',

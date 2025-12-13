@@ -184,18 +184,14 @@ export default function PathogenDistributionChart({
             <p className="text-gray-500 text-sm">{t.pages.testResults.charts.noData}</p>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={160}>
-            <PieChart>
+          <ResponsiveContainer width="100%" height={280}>
+            <PieChart margin={{ top: 20, right: 10, bottom: 50, left: 10 }}>
               <Pie
                 data={data}
                 cx="50%"
-                cy="50%"
+                cy="45%"
                 labelLine={false}
-                label={({ name, payload }) => {
-                  const percentage = payload?.total > 0 ? ((payload?.value || 0) / payload.total * 100) : 0;
-                  return `${name}: ${Math.round(percentage)}%`;
-                }}
-                outerRadius={80}
+                outerRadius={85}
                 fill="#8884d8"
                 dataKey="value"
               >
@@ -204,6 +200,19 @@ export default function PathogenDistributionChart({
                 ))}
               </Pie>
               <Tooltip content={<CustomTooltip />} />
+              <Legend
+                verticalAlign="bottom"
+                height={data.length > 4 ? 60 : 50}
+                wrapperStyle={{ fontSize: '12px' }}
+                iconSize={12}
+                formatter={(value: string) => {
+                  // Truncate long pathogen names to max 20 characters
+                  if (value.length > 20) {
+                    return value.substring(0, 17) + '...';
+                  }
+                  return value;
+                }}
+              />
             </PieChart>
           </ResponsiveContainer>
         )}
@@ -371,7 +380,7 @@ export default function PathogenDistributionChart({
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <SinglePieChart title={t.pages.testResults.charts.me} data={meData} hasData={me.length > 0} />
         <SinglePieChart title={t.pages.testResults.charts.country} data={countryData} hasData={country.length > 0} />
         <SinglePieChart title={t.pages.testResults.charts.region} data={regionData} hasData={region.length > 0} />

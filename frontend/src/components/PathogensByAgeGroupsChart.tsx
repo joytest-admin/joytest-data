@@ -109,7 +109,7 @@ export default function PathogensByAgeGroupsChart({ data, loading }: PathogensBy
         <ResponsiveContainer width="100%" height={350}>
           <BarChart 
             data={chartData} 
-            margin={{ top: 5, right: 20, left: 10, bottom: 60 }}
+            margin={{ top: 5, right: 20, left: 10, bottom: 80 }}
             barCategoryGap="10%"
             barGap={4}
           >
@@ -124,6 +124,13 @@ export default function PathogensByAgeGroupsChart({ data, loading }: PathogensBy
             <Legend 
               wrapperStyle={{ fontSize: '12px' }}
               iconSize={12}
+              formatter={(value: string) => {
+                // Truncate long pathogen names to max 20 characters
+                if (value.length > 20) {
+                  return value.substring(0, 17) + '...';
+                }
+                return value;
+              }}
             />
             {pathogens.map((pathogen, index) => (
               <Bar key={pathogen} dataKey={pathogen} name={pathogen} fill={COLORS[index % COLORS.length]} />

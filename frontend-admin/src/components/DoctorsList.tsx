@@ -238,7 +238,7 @@ export default function DoctorsList({ initialUsers }: DoctorsListProps) {
                   <tr key={user.id} className="group hover:bg-gray-50">
                     <td className="px-2 py-2 text-sm font-medium text-gray-900">
                       <div className="max-w-[180px] truncate" title={user.email || ''}>
-                        {user.email || '-'}
+                      {user.email || '-'}
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-2 py-2 text-sm text-gray-500">
@@ -246,7 +246,7 @@ export default function DoctorsList({ initialUsers }: DoctorsListProps) {
                     </td>
                     <td className="px-2 py-2 text-sm text-gray-500">
                       <div className="max-w-[120px] truncate" title={user.cityName || ''}>
-                        {user.cityName || '-'}
+                      {user.cityName || '-'}
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-2 py-2 text-sm text-gray-500">

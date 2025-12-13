@@ -248,7 +248,8 @@ export default function PositiveTrendsChart({
               <select
                 value={regionId || ''}
                 onChange={(e) => onRegionChange(e.target.value ? parseInt(e.target.value, 10) : null)}
-                className="px-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-1 text-sm font-medium border border-gray-300 rounded bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{ color: '#000000' }}
                 disabled={regionsLoading}
               >
                 <option value="">{t.pages.testResults.charts.allCzechRepublic}</option>
@@ -265,7 +266,8 @@ export default function PositiveTrendsChart({
               <select
                 value={cityId || ''}
                 onChange={(e) => onCityChange(e.target.value ? parseInt(e.target.value, 10) : null)}
-                className="px-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-1 text-sm font-medium border border-gray-300 rounded bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{ color: '#000000' }}
                 disabled={citiesLoading || regionId === null}
               >
                 <option value="">{t.pages.testResults.charts.allCzechRepublic}</option>
@@ -348,7 +350,8 @@ export default function PositiveTrendsChart({
               <select
                 value={regionId || ''}
                 onChange={(e) => onRegionChange(e.target.value ? parseInt(e.target.value, 10) : null)}
-                className="px-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-1 text-sm font-medium border border-gray-300 rounded bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{ color: '#000000' }}
                 disabled={regionsLoading}
               >
                 <option value="">{t.pages.testResults.charts.allCzechRepublic}</option>
@@ -365,7 +368,8 @@ export default function PositiveTrendsChart({
               <select
                 value={cityId || ''}
                 onChange={(e) => onCityChange(e.target.value ? parseInt(e.target.value, 10) : null)}
-                className="px-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-1 text-sm font-medium border border-gray-300 rounded bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{ color: '#000000' }}
                 disabled={citiesLoading || regionId === null}
               >
                 <option value="">{t.pages.testResults.charts.allCzechRepublic}</option>

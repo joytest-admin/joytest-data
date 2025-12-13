@@ -629,8 +629,8 @@ export default function TestResultForm({
               setSelectedCity(lastCity);
               setCitySearchQuery(lastCity.name);
             } else {
-              setCitySearchQuery('');
-              setSelectedCity(null);
+          setCitySearchQuery('');
+          setSelectedCity(null);
             }
           }).catch(() => {
             setCitySearchQuery('');

@@ -106,7 +106,7 @@ export default function PathogensByAgeGroupsChart({ data, loading }: PathogensBy
     <div className="bg-white rounded-lg shadow-sm p-4">
       <h3 className="text-base font-semibold text-gray-900 mb-2">{t.pages.testResults.charts.pathogensByAgeGroups}</h3>
       <div className="w-full">
-        <ResponsiveContainer width="100%" height={250}>
+        <ResponsiveContainer width="100%" height={350}>
           <BarChart 
             data={chartData} 
             margin={{ top: 5, right: 20, left: 10, bottom: 60 }}

@@ -1,9 +1,12 @@
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import TestResultForm from '@/src/components/TestResultForm';
 import Header from '@/src/components/Header';
 import AuthSection from '@/src/components/AuthSection';
 import { backendGet } from '@/src/lib/backend-client';
 import { getDefaultLanguage, getTranslations } from '@/src/lib/translations';
+import { isUserToken, isValidToken } from '@/src/lib/jwt';
+import { validateLinkToken } from '@/src/lib/token-validator';
 import {
   ApiResponse,
   TestType,
@@ -18,6 +21,7 @@ import {
  * Supports authentication via:
  * - JWT token (from cookie, for logged-in users)
  * - Unique link token (from URL query parameter, for passwordless users)
+ * Prevents admin users from accessing doctor portal
  */
 type SearchParams =
   | { token?: string }
@@ -37,6 +41,27 @@ export default async function HomePage({
   
   // Extract unique link token from URL if present
   const linkToken = resolvedSearchParams?.token ?? null;
+  
+  // If JWT token exists but is invalid, redirect to login
+  if (jwtToken && !isValidToken(jwtToken)) {
+    // Invalid token - redirect to login with error
+    redirect('/login?error=invalid_token');
+  }
+  
+  // If logged in with valid JWT, check if user is a doctor (not admin)
+  if (jwtToken && isValidToken(jwtToken) && !isUserToken(jwtToken)) {
+    // Admin user trying to access doctor portal - redirect to login with error
+    redirect('/login?error=admin_detected');
+  }
+  
+  // If link token is provided (and no JWT), validate it before allowing access
+  if (linkToken && !jwtToken) {
+    const validation = await validateLinkToken(linkToken);
+    if (!validation.valid) {
+      // Invalid, pending, or rejected token - redirect to login with appropriate error
+      redirect(`/login?error=${validation.error || 'invalid_token'}`);
+    }
+  }
   
   // If logged in with JWT, mark as authenticated
   const isAuthenticated = !!jwtToken;

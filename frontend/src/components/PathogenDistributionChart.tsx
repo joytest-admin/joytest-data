@@ -5,7 +5,7 @@
  * Shows 4 pie charts side-by-side for comparison
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { useTranslation } from '@/src/contexts/TranslationContext';
 import { getRegions, getCities } from '@/src/lib/api-client';
@@ -103,10 +103,17 @@ export default function PathogenDistributionChart({
     fetchCities();
   }, [regionId]);
 
-  // Clear city when region changes
+  // Clear city when region changes (to prevent stale cityId from previous region)
+  // Use a ref to track previous regionId and only clear on actual changes (not initial mount)
+  const prevRegionIdRef = useRef<number | null>(regionId);
+  
   useEffect(() => {
-    if (regionId === null) {
+    // If regionId changed (and it's not the initial render), clear the city
+    if (prevRegionIdRef.current !== regionId) {
+      // Clear city whenever region changes (prevents stale cityId from previous region)
       onCityChange(null);
+      // Update ref after clearing
+      prevRegionIdRef.current = regionId;
     }
   }, [regionId, onCityChange]);
 
@@ -184,18 +191,14 @@ export default function PathogenDistributionChart({
             <p className="text-gray-500 text-sm">{t.pages.testResults.charts.noData}</p>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
+          <ResponsiveContainer width="100%" height={280}>
+            <PieChart margin={{ top: 20, right: 10, bottom: 50, left: 10 }}>
               <Pie
                 data={data}
                 cx="50%"
-                cy="50%"
+                cy="45%"
                 labelLine={false}
-                label={({ name, payload }) => {
-                  const percentage = payload?.total > 0 ? ((payload?.value || 0) / payload.total * 100) : 0;
-                  return `${name}: ${percentage.toFixed(1)}%`;
-                }}
-                outerRadius={80}
+                outerRadius={85}
                 fill="#8884d8"
                 dataKey="value"
               >
@@ -204,6 +207,19 @@ export default function PathogenDistributionChart({
                 ))}
               </Pie>
               <Tooltip content={<CustomTooltip />} />
+              <Legend
+                verticalAlign="bottom"
+                height={data.length > 4 ? 60 : 50}
+                wrapperStyle={{ fontSize: '12px' }}
+                iconSize={12}
+                formatter={(value: string) => {
+                  // Truncate long pathogen names to max 20 characters
+                  if (value.length > 20) {
+                    return value.substring(0, 17) + '...';
+                  }
+                  return value;
+                }}
+              />
             </PieChart>
           </ResponsiveContainer>
         )}
@@ -213,20 +229,21 @@ export default function PathogenDistributionChart({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">{t.pages.testResults.charts.pathogenDistribution}</h3>
-          <p className="text-sm text-gray-600 mt-1">{t.pages.testResults.charts.comparison}</p>
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="mb-3">
+          <h3 className="text-base font-semibold text-gray-900">{t.pages.testResults.charts.pathogenDistribution}</h3>
+          <p className="text-xs text-gray-600 mt-1">{t.pages.testResults.charts.comparison}</p>
         </div>
 
         {/* Geographic filters */}
-        <div className="flex items-center gap-4 flex-wrap mb-4">
+        <div className="flex items-center gap-4 flex-wrap mb-3">
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-gray-700">{t.pages.testResults.charts.region}:</label>
             <select
               value={regionId || ''}
               onChange={(e) => onRegionChange(e.target.value ? parseInt(e.target.value, 10) : null)}
-              className="px-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-1 text-sm border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{ color: '#000000' }}
               disabled={regionsLoading}
             >
               <option value="">{t.pages.testResults.charts.allCzechRepublic}</option>
@@ -243,7 +260,8 @@ export default function PathogenDistributionChart({
             <select
               value={cityId || ''}
               onChange={(e) => onCityChange(e.target.value ? parseInt(e.target.value, 10) : null)}
-              className="px-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-1 text-sm border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{ color: '#000000' }}
               disabled={citiesLoading || regionId === null}
             >
               <option value="">{regionId ? t.pages.testResults.charts.entireRegion : t.pages.testResults.charts.allCzechRepublic}</option>
@@ -256,8 +274,8 @@ export default function PathogenDistributionChart({
           </div>
         </div>
 
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">{t.pages.testResults.charts.loading}</p>
+        <div className="flex items-center justify-center h-48">
+          <p className="text-gray-500 text-sm">{t.pages.testResults.charts.loading}</p>
         </div>
       </div>
     );
@@ -272,20 +290,21 @@ export default function PathogenDistributionChart({
 
   if (!hasAnyData) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">{t.pages.testResults.charts.pathogenDistribution}</h3>
-          <p className="text-sm text-gray-600 mt-1">{t.pages.testResults.charts.comparison}</p>
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="mb-3">
+          <h3 className="text-base font-semibold text-gray-900">{t.pages.testResults.charts.pathogenDistribution}</h3>
+          <p className="text-xs text-gray-600 mt-1">{t.pages.testResults.charts.comparison}</p>
         </div>
 
         {/* Geographic filters */}
-        <div className="flex items-center gap-4 flex-wrap mb-4">
+        <div className="flex items-center gap-4 flex-wrap mb-3">
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-gray-700">{t.pages.testResults.charts.region}:</label>
             <select
               value={regionId || ''}
               onChange={(e) => onRegionChange(e.target.value ? parseInt(e.target.value, 10) : null)}
-              className="px-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-1 text-sm border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{ color: '#000000' }}
               disabled={regionsLoading}
             >
               <option value="">{t.pages.testResults.charts.allCzechRepublic}</option>
@@ -302,7 +321,8 @@ export default function PathogenDistributionChart({
             <select
               value={cityId || ''}
               onChange={(e) => onCityChange(e.target.value ? parseInt(e.target.value, 10) : null)}
-              className="px-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-1 text-sm border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{ color: '#000000' }}
               disabled={citiesLoading || regionId === null}
             >
               <option value="">{regionId ? t.pages.testResults.charts.entireRegion : t.pages.testResults.charts.allCzechRepublic}</option>
@@ -315,27 +335,28 @@ export default function PathogenDistributionChart({
           </div>
         </div>
 
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">{t.pages.testResults.charts.noData}</p>
+        <div className="flex items-center justify-center h-48">
+          <p className="text-gray-500 text-sm">{t.pages.testResults.charts.noData}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">{t.pages.testResults.charts.pathogenDistribution}</h3>
-        <p className="text-sm text-gray-600 mt-1">{t.pages.testResults.charts.comparison}</p>
+    <div className="bg-white rounded-lg shadow-sm p-4">
+      <div className="mb-3">
+        <h3 className="text-base font-semibold text-gray-900">{t.pages.testResults.charts.pathogenDistribution}</h3>
+        <p className="text-xs text-gray-600 mt-1">{t.pages.testResults.charts.comparison}</p>
 
         {/* Geographic filters */}
-        <div className="flex items-center gap-4 flex-wrap mt-4">
+        <div className="flex items-center gap-4 flex-wrap mt-3">
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-gray-700">{t.pages.testResults.charts.region}:</label>
             <select
               value={regionId || ''}
               onChange={(e) => onRegionChange(e.target.value ? parseInt(e.target.value, 10) : null)}
-              className="px-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-1 text-sm border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{ color: '#000000' }}
               disabled={regionsLoading}
             >
               <option value="">{t.pages.testResults.charts.allCzechRepublic}</option>
@@ -352,7 +373,8 @@ export default function PathogenDistributionChart({
             <select
               value={cityId || ''}
               onChange={(e) => onCityChange(e.target.value ? parseInt(e.target.value, 10) : null)}
-              className="px-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-1 text-sm border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{ color: '#000000' }}
               disabled={citiesLoading || regionId === null}
             >
               <option value="">{regionId ? t.pages.testResults.charts.entireRegion : t.pages.testResults.charts.allCzechRepublic}</option>
@@ -365,7 +387,7 @@ export default function PathogenDistributionChart({
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <SinglePieChart title={t.pages.testResults.charts.me} data={meData} hasData={me.length > 0} />
         <SinglePieChart title={t.pages.testResults.charts.country} data={countryData} hasData={country.length > 0} />
         <SinglePieChart title={t.pages.testResults.charts.region} data={regionData} hasData={region.length > 0} />

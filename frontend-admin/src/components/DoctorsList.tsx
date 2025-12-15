@@ -194,32 +194,32 @@ export default function DoctorsList({ initialUsers }: DoctorsListProps) {
         />
       )}
 
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow">
-        <table className="min-w-full divide-y divide-gray-200">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow">
+        <table className="min-w-full divide-y divide-gray-200 table-auto">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 w-[180px]">
                 Email
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 w-[100px]">
                 IČP
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 w-[120px]">
                 Město
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 w-[90px]">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Vyžaduje heslo
+              <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 w-[100px]">
+                Heslo
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Jedinečný odkaz
+              <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 min-w-[250px]">
+                Odkaz
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 w-[100px]">
                 Vytvořeno
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-2 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500 sticky right-0 bg-gray-50 z-10 min-w-[200px]">
                 Akce
               </th>
             </tr>
@@ -227,7 +227,7 @@ export default function DoctorsList({ initialUsers }: DoctorsListProps) {
           <tbody className="divide-y divide-gray-200 bg-white">
             {users.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">
+                <td colSpan={8} className="px-2 py-3 text-center text-sm text-gray-500">
                   Žádní doktoři
                 </td>
               </tr>
@@ -235,57 +235,61 @@ export default function DoctorsList({ initialUsers }: DoctorsListProps) {
               users.map((user) => {
                 const uniqueLink = getUniqueLink(user.uniqueLinkToken);
                 return (
-                  <tr key={user.id}>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
+                  <tr key={user.id} className="group hover:bg-gray-50">
+                    <td className="px-2 py-2 text-sm font-medium text-gray-900">
+                      <div className="max-w-[180px] truncate" title={user.email || ''}>
                       {user.email || '-'}
+                      </div>
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    <td className="whitespace-nowrap px-2 py-2 text-sm text-gray-500">
                       {user.icpNumber || '-'}
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    <td className="px-2 py-2 text-sm text-gray-500">
+                      <div className="max-w-[120px] truncate" title={user.cityName || ''}>
                       {user.cityName || '-'}
+                      </div>
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    <td className="whitespace-nowrap px-2 py-2 text-sm text-gray-500">
                       {user.status === 'pending' ? (
-                        <span className="inline-flex rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-800">
-                          Čeká na schválení
+                        <span className="inline-flex rounded-full bg-yellow-100 px-1.5 py-0.5 text-xs font-semibold text-yellow-800">
+                          Čeká
                         </span>
                       ) : user.status === 'approved' ? (
-                        <span className="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
-                          Schváleno
+                        <span className="inline-flex rounded-full bg-green-100 px-1.5 py-0.5 text-xs font-semibold text-green-800">
+                          OK
                         </span>
                       ) : (
-                        <span className="inline-flex rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">
-                          Zamítnuto
-                        </span>
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                      {user.requirePassword ? (
-                        <span className="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
-                          Ano
-                        </span>
-                      ) : (
-                        <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-800">
+                        <span className="inline-flex rounded-full bg-red-100 px-1.5 py-0.5 text-xs font-semibold text-red-800">
                           Ne
                         </span>
                       )}
                     </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="whitespace-nowrap px-2 py-2 text-sm text-gray-500">
+                      {user.requirePassword ? (
+                        <span className="inline-flex rounded-full bg-green-100 px-1.5 py-0.5 text-xs font-semibold text-green-800">
+                          Ano
+                        </span>
+                      ) : (
+                        <span className="inline-flex rounded-full bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-gray-800">
+                          Ne
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-2 py-2 text-sm text-gray-500">
                       {user.requirePassword ? (
                         <span className="text-gray-400">-</span>
                       ) : uniqueLink ? (
-                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex items-center gap-1">
                           <input
                             type="text"
                             readOnly
                             value={uniqueLink}
-                          className="min-w-[180px] flex-1 rounded border border-gray-300 px-2 py-1 text-xs font-mono"
+                            className="min-w-[180px] max-w-[220px] flex-1 rounded border border-gray-300 px-1.5 py-0.5 text-xs font-mono"
                             onClick={(e) => (e.target as HTMLInputElement).select()}
                           />
                           <button
                             onClick={() => copyToClipboard(uniqueLink)}
-                          className="rounded bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-700"
+                            className="shrink-0 rounded bg-blue-600 px-1.5 py-0.5 text-xs text-white hover:bg-blue-700 whitespace-nowrap"
                             title="Kopírovat odkaz"
                           >
                             Kopírovat
@@ -293,34 +297,34 @@ export default function DoctorsList({ initialUsers }: DoctorsListProps) {
                           <button
                             onClick={() => handleRegenerateToken(user.id)}
                             disabled={loading}
-                          className="rounded bg-orange-600 px-3 py-1 text-xs text-white hover:bg-orange-700 disabled:opacity-50"
+                            className="shrink-0 rounded bg-orange-600 px-1.5 py-0.5 text-xs text-white hover:bg-orange-700 disabled:opacity-50 whitespace-nowrap"
                             title="Vygenerovat nový odkaz"
                           >
                             Obnovit
                           </button>
                         </div>
                       ) : (
-                        <span className="text-gray-400">Žádný odkaz</span>
+                        <span className="text-gray-400 text-xs">-</span>
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                      {new Date(user.createdAt).toLocaleDateString('cs-CZ')}
+                    <td className="whitespace-nowrap px-2 py-2 text-sm text-gray-500">
+                      {new Date(user.createdAt).toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium">
-                      <div className="flex flex-wrap justify-end gap-2">
+                    <td className="px-2 py-2 text-sm font-medium sticky right-0 bg-white group-hover:bg-gray-50 z-10">
+                      <div className="flex justify-end gap-1">
                         {user.status === 'pending' && (
                           <>
                             <button
                               onClick={() => handleValidate(user.id, 'approved')}
                               disabled={loading}
-                              className="rounded border border-green-200 px-3 py-1 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50"
+                              className="rounded border border-green-200 px-1.5 py-0.5 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50 whitespace-nowrap"
                             >
                               Schválit
                             </button>
                             <button
                               onClick={() => handleValidate(user.id, 'rejected')}
                               disabled={loading}
-                              className="rounded border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                              className="rounded border border-red-200 px-1.5 py-0.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50 whitespace-nowrap"
                             >
                               Zamítnout
                             </button>
@@ -328,14 +332,14 @@ export default function DoctorsList({ initialUsers }: DoctorsListProps) {
                         )}
                         <button
                           onClick={() => handleEdit(user)}
-                          className="rounded border border-blue-200 px-3 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50"
+                          className="rounded border border-blue-200 px-1.5 py-0.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 whitespace-nowrap"
                         >
                           Upravit
                         </button>
                         <button
                           onClick={() => handleDelete(user.id)}
                           disabled={loading}
-                          className="rounded border border-red-200 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                          className="rounded border border-red-200 px-1.5 py-0.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 whitespace-nowrap"
                         >
                           Smazat
                         </button>

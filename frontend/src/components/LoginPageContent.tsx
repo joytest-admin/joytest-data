@@ -3,10 +3,14 @@
 import { useTranslation } from '@/src/contexts/TranslationContext';
 import LoginForm from './LoginForm';
 
+interface LoginPageContentProps {
+  initialError?: string;
+}
+
 /**
  * Login page content component (client-side for translations)
  */
-export default function LoginPageContent() {
+export default function LoginPageContent({ initialError }: LoginPageContentProps) {
   const { t } = useTranslation();
 
   return (
@@ -25,7 +29,7 @@ export default function LoginPageContent() {
             {t.auth.login.description}
           </p>
         </div>
-        <LoginForm />
+        <LoginForm initialError={initialError} />
       </div>
     </div>
   );

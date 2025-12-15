@@ -66,10 +66,11 @@ export default function PathogensByAgeGroupsChart({ data, loading }: PathogensBy
           <p className="font-semibold text-gray-900 mb-2">{label}</p>
           {payload.map((entry: any, index: number) => {
             if (entry.value === 0) return null;
-            const percentage = total > 0 ? Math.round((entry.value / total) * 100) : 0;
+            const value = Math.round(entry.value); // Ensure whole number
+            const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
             return (
               <p key={index} className="text-sm text-gray-600" style={{ color: entry.color }}>
-                {entry.name}: {entry.value} {t.pages.testResults.results} ({percentage}%)
+                {entry.name}: {value} {t.pages.testResults.results} ({percentage}%)
               </p>
             );
           })}
@@ -81,10 +82,10 @@ export default function PathogensByAgeGroupsChart({ data, loading }: PathogensBy
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t.pages.testResults.charts.pathogensByAgeGroups}</h3>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">{t.pages.testResults.charts.loading}</p>
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <h3 className="text-base font-semibold text-gray-900 mb-2">{t.pages.testResults.charts.pathogensByAgeGroups}</h3>
+        <div className="flex items-center justify-center h-48">
+          <p className="text-gray-500 text-sm">{t.pages.testResults.charts.loading}</p>
         </div>
       </div>
     );
@@ -92,26 +93,46 @@ export default function PathogensByAgeGroupsChart({ data, loading }: PathogensBy
 
   if (data.length === 0 || total === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t.pages.testResults.charts.pathogensByAgeGroups}</h3>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">{t.pages.testResults.charts.noData}</p>
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <h3 className="text-base font-semibold text-gray-900 mb-2">{t.pages.testResults.charts.pathogensByAgeGroups}</h3>
+        <div className="flex items-center justify-center h-48">
+          <p className="text-gray-500 text-sm">{t.pages.testResults.charts.noData}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">{t.pages.testResults.charts.pathogensByAgeGroups}</h3>
+    <div className="bg-white rounded-lg shadow-sm p-4">
+      <h3 className="text-base font-semibold text-gray-900 mb-2">{t.pages.testResults.charts.pathogensByAgeGroups}</h3>
       <div className="w-full">
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+        <ResponsiveContainer width="100%" height={380}>
+          <BarChart 
+            data={chartData} 
+            margin={{ top: 5, right: 20, left: 10, bottom: 100 }}
+            barCategoryGap="10%"
+            barGap={4}
+          >
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="ageGroup" angle={-45} textAnchor="end" height={80} />
-            <YAxis />
+            <XAxis dataKey="ageGroup" angle={-45} textAnchor="end" height={60} />
+            <YAxis 
+              tickFormatter={(value) => Math.round(value).toString()}
+              domain={[0, 'dataMax']}
+              allowDecimals={false}
+            />
             <Tooltip content={<CustomTooltip />} />
-            <Legend />
+            <Legend 
+              verticalAlign="bottom"
+              wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+              iconSize={12}
+              formatter={(value: string) => {
+                // Truncate long pathogen names to max 20 characters
+                if (value.length > 20) {
+                  return value.substring(0, 17) + '...';
+                }
+                return value;
+              }}
+            />
             {pathogens.map((pathogen, index) => (
               <Bar key={pathogen} dataKey={pathogen} name={pathogen} fill={COLORS[index % COLORS.length]} />
             ))}

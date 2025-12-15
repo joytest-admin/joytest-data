@@ -94,6 +94,14 @@ export default function TestResultForm({
     return '';
   };
 
+  const getInitialTestDate = (): string => {
+    if (initialData?.testDate) {
+      // Convert testDate to YYYY-MM-DD format for date input
+      return new Date(initialData.testDate).toISOString().split('T')[0];
+    }
+    return new Date().toISOString().split('T')[0];
+  };
+
   // Helper to get last test type from localStorage
   const getLastTestTypeFromStorage = (): string => {
     if (typeof window !== 'undefined') {
@@ -112,6 +120,31 @@ export default function TestResultForm({
       }
     }
     return '';
+  };
+
+  // Helper to get last city from localStorage
+  const getLastCityFromStorage = async (): Promise<CityResponse | null> => {
+    if (typeof window !== 'undefined') {
+      try {
+        const lastCityId = localStorage.getItem('lastCityId');
+        if (lastCityId) {
+          // Try to load the city by ID to verify it still exists
+          try {
+            const city = await getCityById(parseInt(lastCityId, 10));
+            if (city) {
+              return city;
+            }
+          } catch (err) {
+            // City doesn't exist or failed to load - clear from storage
+            localStorage.removeItem('lastCityId');
+          }
+        }
+      } catch (error) {
+        // Handle localStorage errors (e.g., quota exceeded, disabled)
+        console.warn('Failed to load last city from localStorage:', error);
+      }
+    }
+    return null;
   };
 
   // Helper to get initial test type (from initialData or localStorage)
@@ -135,7 +168,7 @@ export default function TestResultForm({
   const [citySuggestions, setCitySuggestions] = useState<CityResponse[]>([]);
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const [loadingInitialCity, setLoadingInitialCity] = useState(false);
-  const [testDate, setTestDate] = useState(new Date().toISOString().split('T')[0]);
+  const [testDate, setTestDate] = useState(getInitialTestDate());
   const [temperature, setTemperature] = useState<string>(getInitialTemperature());
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>(getInitialSymptoms());
   const [otherInformations, setOtherInformations] = useState(initialData?.otherInformations || '');
@@ -175,9 +208,10 @@ export default function TestResultForm({
   const cityInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  // Load initial city from profile or initialData
+  // Load initial city from profile, initialData, or localStorage
   useEffect(() => {
     const loadInitialCity = async () => {
+      // Priority: initialData > profileCityId > localStorage (for new forms only)
       const cityIdToLoad = initialData?.cityId || profileCityId;
       if (cityIdToLoad) {
         setLoadingInitialCity(true);
@@ -189,6 +223,20 @@ export default function TestResultForm({
           }
         } catch (err) {
           console.error('Failed to load initial city:', err);
+        } finally {
+          setLoadingInitialCity(false);
+        }
+      } else if (!initialData && !profileCityId) {
+        // New form with no profile city: try to load from localStorage
+        setLoadingInitialCity(true);
+        try {
+          const lastCity = await getLastCityFromStorage();
+          if (lastCity) {
+            setSelectedCity(lastCity);
+            setCitySearchQuery(lastCity.name);
+          }
+        } catch (err) {
+          console.error('Failed to load last city from localStorage:', err);
         } finally {
           setLoadingInitialCity(false);
         }
@@ -334,6 +382,8 @@ export default function TestResultForm({
   }, [testTypeId, initialTestTypes, pathogens, pathogenId]);
 
   // Try to identify user by unique link token on mount
+  // Note: Server-side validation on main page should catch invalid tokens,
+  // but this provides a fallback and sets authentication state
   useEffect(() => {
   const identifyByToken = async () => {
     if (!linkToken || initialIsAuthenticated) {
@@ -354,10 +404,19 @@ export default function TestResultForm({
         // City part will be loaded from profile if available
         setError(null);
       } else {
-        setError(t.form.invalidLinkError);
+        // Invalid token - redirect to login (server-side validation should catch this, but fallback)
+        window.location.href = '/login?error=invalid_token';
       }
     } catch (err: any) {
-      setError(err.message || t.form.invalidLinkError);
+      // Check error message to determine specific issue
+      const errorMessage = err.message || '';
+      if (errorMessage.includes('schválení') || errorMessage.includes('pending') || errorMessage.includes('rejected')) {
+        window.location.href = '/login?error=account_pending';
+      } else if (errorMessage.includes('hesla') || errorMessage.includes('password')) {
+        window.location.href = '/login?error=password_required';
+      } else {
+        window.location.href = '/login?error=invalid_token';
+      }
     } finally {
       setLoading(false);
     }
@@ -452,6 +511,7 @@ export default function TestResultForm({
           cityId: selectedCity.id,
           testTypeId,
           dateOfBirth,
+          testDate: new Date(testDate).toISOString(), // Convert test date to ISO string
           symptoms: symptoms.length > 0 ? symptoms : undefined, // Only include if not empty
           pathogenId: result === 'positive' ? pathogenId : undefined,
           patientId: patientId || undefined,
@@ -479,6 +539,7 @@ export default function TestResultForm({
           icpNumber: profileIcpNumber || '', // Include ICP number from doctor's profile
           testTypeId,
           dateOfBirth,
+          testDate: new Date(testDate).toISOString(), // Convert test date to ISO string
           symptoms: symptoms.length > 0 ? symptoms : undefined, // Only include if not empty
           pathogenId: result === 'positive' ? pathogenId : undefined,
           patientId: patientId || undefined, // Include patient ID if selected
@@ -509,6 +570,16 @@ export default function TestResultForm({
           } catch (error) {
             // Handle localStorage errors gracefully
             console.warn('Failed to save last test type to localStorage:', error);
+          }
+        }
+
+        // Save last selected city to localStorage (for new forms only)
+        if (selectedCity && !isEditMode && typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('lastCityId', selectedCity.id.toString());
+          } catch (error) {
+            // Handle localStorage errors gracefully
+            console.warn('Failed to save last city to localStorage:', error);
           }
         }
 
@@ -552,8 +623,19 @@ export default function TestResultForm({
           setTestTypeId(getLastTestTypeFromStorage());
           setResult('');
           setYearOfBirth('');
+          // Reload city from localStorage (or empty if not available)
+          getLastCityFromStorage().then((lastCity) => {
+            if (lastCity) {
+              setSelectedCity(lastCity);
+              setCitySearchQuery(lastCity.name);
+            } else {
           setCitySearchQuery('');
           setSelectedCity(null);
+            }
+          }).catch(() => {
+            setCitySearchQuery('');
+            setSelectedCity(null);
+          });
           setTestDate(new Date().toISOString().split('T')[0]);
           setTemperature('');
           setSelectedSymptoms([]);
@@ -822,6 +904,15 @@ export default function TestResultForm({
                           setCitySearchQuery(city.name);
                           setShowCitySuggestions(false);
                           setCitySuggestions([]);
+                          // Save to localStorage when user selects a city
+                          if (typeof window !== 'undefined' && !isEditMode) {
+                            try {
+                              localStorage.setItem('lastCityId', city.id.toString());
+                            } catch (error) {
+                              // Handle localStorage errors gracefully
+                              console.warn('Failed to save last city to localStorage:', error);
+                            }
+                          }
                         }}
                         className="w-full px-4 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
                       >

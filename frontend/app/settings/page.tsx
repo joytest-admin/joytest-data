@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import SettingsPageContent from '@/src/components/SettingsPageContent';
 import { backendGet } from '@/src/lib/backend-client';
+import { validateLinkToken } from '@/src/lib/token-validator';
 import {
   ApiResponse,
   DoctorProfileResponse,
@@ -27,6 +28,15 @@ export default async function SettingsPage({
 
   if (!jwtToken && !linkToken) {
     redirect('/login');
+  }
+
+  // If link token is provided (and no JWT), validate it before allowing access
+  if (linkToken && !jwtToken) {
+    const validation = await validateLinkToken(linkToken);
+    if (!validation.valid) {
+      // Invalid, pending, or rejected token - redirect to login with appropriate error
+      redirect(`/login?error=${validation.error || 'invalid_token'}`);
+    }
   }
 
   let profile: DoctorProfileResponse | null = null;

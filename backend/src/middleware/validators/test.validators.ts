@@ -77,6 +77,11 @@ export const createTestResultValidator = [
     .withMessage('Date of birth is required')
     .isISO8601()
     .withMessage('Date of birth must be a valid ISO 8601 date'),
+  body('testDate')
+    .notEmpty()
+    .withMessage('Test date is required')
+    .isISO8601()
+    .withMessage('Test date must be a valid ISO 8601 date'),
   body('symptoms')
     .optional()
     .isArray()
@@ -229,6 +234,10 @@ export const updateTestResultValidator = [
     .optional()
     .isISO8601()
     .withMessage('Date of birth must be a valid ISO 8601 date'),
+  body('testDate')
+    .optional()
+    .isISO8601()
+    .withMessage('Test date must be a valid ISO 8601 date'),
   body('symptoms')
     .optional()
     .isArray()

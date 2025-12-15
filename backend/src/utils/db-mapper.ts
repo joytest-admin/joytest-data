@@ -83,6 +83,7 @@ export const mapTestResultRow = (row: any): TestResultEntity => {
     icpNumber: row.icp_number,
     testTypeId: row.test_type_id,
     dateOfBirth: row.date_of_birth,
+    testDate: row.test_date,
     symptoms: row.symptoms || [],
     pathogenId: row.pathogen_id || null,
     otherInformations: row.other_informations,

@@ -41,6 +41,7 @@ export interface TestResultEntity {
   icpNumber: string;
   testTypeId: string;
   dateOfBirth: Date;
+  testDate: Date; // Date when the test was actually performed
   symptoms: string[];
   pathogenId: string | null;
   otherInformations: string | null;
@@ -111,6 +112,7 @@ export interface CreateTestResultRequest {
   icpNumber: string;
   testTypeId: string;
   dateOfBirth: string; // ISO date string
+  testDate: string; // ISO date string - Date when the test was actually performed
   symptoms?: string[]; // Optional - can be empty array or undefined
   pathogenId?: string; // Required if result is positive
   patientId?: string;
@@ -134,6 +136,7 @@ export interface UpdateTestResultRequest {
   icpNumber?: string;
   testTypeId?: string;
   dateOfBirth?: string; // ISO date string
+  testDate?: string; // ISO date string - Date when the test was actually performed
   symptoms?: string[];
   pathogenId?: string;
   patientId?: string | null;
@@ -220,6 +223,7 @@ export interface TestResultResponse {
   testTypeId: string;
   testTypeName?: string; // Populated when joining with test_types
   dateOfBirth: Date;
+  testDate: Date; // Date when the test was actually performed
   symptoms: string[];
   pathogenId: string | null;
   pathogenName?: string | null; // Populated when joining with pathogens

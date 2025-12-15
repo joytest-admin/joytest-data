@@ -5,7 +5,7 @@
  * Shows 4 pie charts side-by-side for comparison
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { useTranslation } from '@/src/contexts/TranslationContext';
 import { getRegions, getCities } from '@/src/lib/api-client';
@@ -103,10 +103,17 @@ export default function PathogenDistributionChart({
     fetchCities();
   }, [regionId]);
 
-  // Clear city when region changes
+  // Clear city when region changes (to prevent stale cityId from previous region)
+  // Use a ref to track previous regionId and only clear on actual changes (not initial mount)
+  const prevRegionIdRef = useRef<number | null>(regionId);
+  
   useEffect(() => {
-    if (regionId === null) {
+    // If regionId changed (and it's not the initial render), clear the city
+    if (prevRegionIdRef.current !== regionId) {
+      // Clear city whenever region changes (prevents stale cityId from previous region)
       onCityChange(null);
+      // Update ref after clearing
+      prevRegionIdRef.current = regionId;
     }
   }, [regionId, onCityChange]);
 

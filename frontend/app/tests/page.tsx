@@ -397,7 +397,7 @@ function TestsPageContent() {
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent row click navigation
     
-    if (!confirm(t.pages.testResults.confirmDelete || 'Opravdu chcete smazat tento test? Tato akce je nevratná.')) {
+    if (!confirm(t.pages.testResults.confirmDelete)) {
       return;
     }
 
@@ -414,14 +414,14 @@ function TestsPageContent() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error?.message || t.pages.testResults.deleteFailed || 'Nepodařilo se smazat test');
+        throw new Error(error.error?.message || t.pages.testResults.deleteFailed);
       }
 
       // Remove the deleted test from the list
       setTestResults((prev) => prev.filter((result) => result.id !== id));
       setTotal((prev) => Math.max(0, prev - 1));
     } catch (err: any) {
-      alert(err.message || t.pages.testResults.deleteFailed || 'Nepodařilo se smazat test');
+      alert(err.message || t.pages.testResults.deleteFailed);
     } finally {
       setDeletingId(null);
     }
@@ -911,9 +911,9 @@ function TestsPageContent() {
                                   onClick={(e) => handleDelete(result.id, e)}
                                   disabled={deletingId === result.id}
                                   className="text-red-600 hover:text-red-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                                  title={t.pages.testResults.delete || 'Smazat test'}
+                                  title={t.pages.testResults.delete}
                                 >
-                                  {deletingId === result.id ? (t.pages.testResults.deleting || 'Mažu...') : (t.pages.testResults.delete || 'Smazat')}
+                                  {deletingId === result.id ? t.pages.testResults.deleting : t.pages.testResults.delete}
                                 </button>
                               </div>
                             </td>

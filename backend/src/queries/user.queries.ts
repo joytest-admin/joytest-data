@@ -241,8 +241,19 @@ export const deleteUser = async (id: string): Promise<boolean> => {
     
     return result.rowCount !== null && result.rowCount > 0;
   } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
+    // Store the original error before attempting rollback
+    const originalError = error;
+    
+    // Attempt to rollback, but don't let rollback errors mask the original error
+    try {
+      await client.query('ROLLBACK');
+    } catch (rollbackError) {
+      // Log rollback error but don't throw it - preserve the original error
+      console.error('Failed to rollback transaction:', rollbackError);
+    }
+    
+    // Always re-throw the original error
+    throw originalError;
   } finally {
     client.release();
   }

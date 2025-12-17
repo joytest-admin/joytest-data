@@ -212,14 +212,51 @@ export const updateUser = async (
 
 /**
  * Delete user by ID
+ * This function handles deletion of all related data:
+ * - Test results created by the user (and their vaccinations)
+ * - Patients owned by the user (via CASCADE)
  * @param id - User ID
  * @returns True if user was deleted, false otherwise
  */
 export const deleteUser = async (id: string): Promise<boolean> => {
   const pool = getDatabasePool();
-  const result = await pool.query('DELETE FROM users WHERE id = $1', [id]);
-
-  return result.rowCount !== null && result.rowCount > 0;
+  
+  // Use a transaction to ensure all deletions succeed or none do
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    // Import here to avoid circular dependency
+    const { deleteTestResultsByUserId } = await import('./test-result.queries');
+    
+    // Delete all test results created by this user (including vaccinations)
+    // Pass the transaction client to ensure all operations are in the same transaction
+    await deleteTestResultsByUserId(id, client);
+    
+    // Delete the user (patients will be deleted via CASCADE)
+    const result = await client.query('DELETE FROM users WHERE id = $1', [id]);
+    
+    await client.query('COMMIT');
+    
+    return result.rowCount !== null && result.rowCount > 0;
+  } catch (error) {
+    // Store the original error before attempting rollback
+    const originalError = error;
+    
+    // Attempt to rollback, but don't let rollback errors mask the original error
+    try {
+      await client.query('ROLLBACK');
+    } catch (rollbackError) {
+      // Log rollback error but don't throw it - preserve the original error
+      console.error('Failed to rollback transaction:', rollbackError);
+    }
+    
+    // Always re-throw the original error
+    throw originalError;
+  } finally {
+    client.release();
+  }
 };
 
 /**

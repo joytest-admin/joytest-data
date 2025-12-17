@@ -53,6 +53,10 @@ export interface Translations {
         selectPatient: string;
         downloadCsv: string;
         edit: string;
+        delete: string;
+        deleting: string;
+        confirmDelete: string;
+        deleteFailed: string;
         previous: string;
         next: string;
         dateCreated: string;
@@ -345,6 +349,10 @@ export const translations: Record<LanguageCode, Translations> = {
         selectPatient: 'Vyberte prosím pacienta',
         downloadCsv: 'Stáhnout CSV',
         edit: 'Upravit',
+        delete: 'Smazat',
+        deleting: 'Mažu...',
+        confirmDelete: 'Opravdu chcete smazat tento test? Tato akce je nevratná.',
+        deleteFailed: 'Nepodařilo se smazat test',
         previous: 'Předchozí',
         next: 'Další',
         dateCreated: 'Datum vytvoření',
@@ -633,6 +641,10 @@ export const translations: Record<LanguageCode, Translations> = {
         selectPatient: 'Please select a patient',
         downloadCsv: 'Download CSV',
         edit: 'Edit',
+        delete: 'Delete',
+        deleting: 'Deleting...',
+        confirmDelete: 'Are you sure you want to delete this test? This action cannot be undone.',
+        deleteFailed: 'Failed to delete test',
         previous: 'Previous',
         next: 'Next',
         dateCreated: 'Date Created',

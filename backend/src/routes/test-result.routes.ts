@@ -10,6 +10,7 @@ import {
   createTestResultService,
   updateTestResultService,
   deleteTestResultService,
+  deleteTestResultAdminService,
   getDoctorTestResults,
   getAdminTestResults,
 } from '../services/test-result.service';
@@ -988,6 +989,38 @@ router.delete(
     }
 
     await deleteTestResultService(req.params.id, authReq.user.userId);
+    res.json({ success: true, message: 'Test result deleted successfully' });
+  },
+);
+
+/**
+ * @swagger
+ * /api/test-results/{id}/admin:
+ *   delete:
+ *     summary: Delete a test result (admin only)
+ *     tags: [Test Results]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Test result deleted successfully
+ *       403:
+ *         description: Forbidden (admin only)
+ *       404:
+ *         description: Test result not found
+ */
+router.delete(
+  '/:id/admin',
+  authenticate,
+  requireAdmin,
+  async (req: Request, res: Response) => {
+    await deleteTestResultAdminService(req.params.id);
     res.json({ success: true, message: 'Test result deleted successfully' });
   },
 );

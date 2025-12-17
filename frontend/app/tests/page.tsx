@@ -43,6 +43,7 @@ function TestsPageContent() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [filterCity, setFilterCity] = useState('');
   
@@ -392,6 +393,39 @@ function TestsPageContent() {
     const newUrl = params.toString() ? `/tests?${params.toString()}` : '/tests';
     router.replace(newUrl, { scroll: false });
   }, [search, sortBy, sortOrder, currentPage, linkToken, router]);
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click navigation
+    
+    if (!confirm(t.pages.testResults.confirmDelete)) {
+      return;
+    }
+
+    setDeletingId(id);
+    try {
+      const url = linkToken 
+        ? `/api/test-results/${id}?token=${linkToken}` 
+        : `/api/test-results/${id}`;
+      
+      const response = await fetch(url, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || t.pages.testResults.deleteFailed);
+      }
+
+      // Remove the deleted test from the list
+      setTestResults((prev) => prev.filter((result) => result.id !== id));
+      setTotal((prev) => Math.max(0, prev - 1));
+    } catch (err: any) {
+      alert(err.message || t.pages.testResults.deleteFailed);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const handleSort = (column: SortBy) => {
     if (sortBy === column) {
@@ -863,15 +897,25 @@ function TestsPageContent() {
                               {result.cityName || '-'}
                             </td>
                             <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  router.push(editUrl);
-                                }}
-                                className="text-blue-600 hover:text-blue-800 font-medium"
-                              >
-                                {t.pages.testResults.edit}
-                              </button>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(editUrl);
+                                  }}
+                                  className="text-blue-600 hover:text-blue-800 font-medium"
+                                >
+                                  {t.pages.testResults.edit}
+                                </button>
+                                <button
+                                  onClick={(e) => handleDelete(result.id, e)}
+                                  disabled={deletingId === result.id}
+                                  className="text-red-600 hover:text-red-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title={t.pages.testResults.delete}
+                                >
+                                  {deletingId === result.id ? t.pages.testResults.deleting : t.pages.testResults.delete}
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );

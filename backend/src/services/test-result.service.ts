@@ -597,6 +597,22 @@ export const deleteTestResultService = async (
 };
 
 /**
+ * Delete a test result (admin only - bypasses ownership check)
+ * @param id - Test result ID
+ * @returns True if deleted successfully
+ */
+export const deleteTestResultAdminService = async (id: string): Promise<boolean> => {
+  // Check if test result exists
+  const existing = await findTestResultById(id);
+  if (!existing) {
+    throw new NotFoundError('Test result not found');
+  }
+
+  // Admins can delete any test result without ownership verification
+  return await deleteTestResult(id);
+};
+
+/**
  * Get test results for export by date interval (doctor only)
  * @param doctorId - Doctor user ID
  * @param startDate - Start date (ISO string)

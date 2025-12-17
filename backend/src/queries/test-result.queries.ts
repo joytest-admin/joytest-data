@@ -595,6 +595,30 @@ export const deleteTestResult = async (id: string): Promise<boolean> => {
 };
 
 /**
+ * Delete all test results created by a specific user
+ * This also handles deletion of related test_result_vaccinations via CASCADE or manual deletion
+ * @param userId - User ID (created_by)
+ * @param client - Optional database client (for transactions). If not provided, uses pool
+ * @returns Number of test results deleted
+ */
+export const deleteTestResultsByUserId = async (userId: string, client?: any): Promise<number> => {
+  const queryClient = client || getDatabasePool();
+  
+  // First, delete all test_result_vaccinations for test results created by this user
+  // (if CASCADE is not set, we need to delete manually)
+  await queryClient.query(
+    `DELETE FROM test_result_vaccinations 
+     WHERE test_result_id IN (SELECT id FROM test_results WHERE created_by = $1)`,
+    [userId],
+  );
+  
+  // Then delete all test results created by this user
+  const result = await queryClient.query('DELETE FROM test_results WHERE created_by = $1', [userId]);
+  
+  return result.rowCount || 0;
+};
+
+/**
  * Find test results by patient ID (for admin or patient queries)
  * @param patientId - Patient ID
  * @returns Array of test result entities

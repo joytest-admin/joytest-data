@@ -37,12 +37,23 @@ const getYearOfBirth = (isoString: string) => {
   return date.getFullYear();
 };
 
+/**
+ * Helper to truncate text to a maximum length
+ */
+const truncateText = (text: string, maxLength: number): string => {
+  if (!text || text.length <= maxLength) {
+    return text;
+  }
+  return text.substring(0, maxLength - 3) + '...';
+};
+
 export default function TestsList({ initialTestResults, initialTotal, initialDoctors }: TestsListProps) {
   const [testResults, setTestResults] = useState<TestResultResponse[]>(initialTestResults);
   const [total, setTotal] = useState(initialTotal ?? initialTestResults.length);
   const [doctors, setDoctors] = useState<User[]>(initialDoctors);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Filters (apply to both table and export)
   const [filterCity, setFilterCity] = useState('');
@@ -122,6 +133,33 @@ export default function TestsList({ initialTestResults, initialTotal, initialDoc
 
     fetchDoctors();
   }, []);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Opravdu chcete smazat tento test? Tato akce je nevratná.')) {
+      return;
+    }
+
+    setDeletingId(id);
+    try {
+      const response = await fetch(`/api/test-results/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Nepodařilo se smazat test');
+      }
+
+      // Remove the deleted test from the list
+      setTestResults((prev) => prev.filter((result) => result.id !== id));
+      setTotal((prev) => Math.max(0, prev - 1));
+    } catch (err: any) {
+      alert(err.message || 'Nepodařilo se smazat test');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const handleExport = async () => {
     setExportLoading(true);
@@ -285,65 +323,79 @@ export default function TestsList({ initialTestResults, initialTotal, initialDoc
       {loading ? (
         <div className="text-center py-8 text-gray-500">Načítání...</div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow">
+        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Datum vytvoření
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Doktor
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Typ testu
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Patogen
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Pacient
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Ročník narození
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Ročník
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Město
+                </th>
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Akce
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
               {testResults.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan={8} className="px-4 py-3 text-center text-sm text-gray-500">
                     {loading ? 'Načítání...' : 'Žádné výsledky testů'}
                   </td>
                 </tr>
               ) : (
                 testResults.map((result) => {
                   const doctor = doctors.find((d) => d.id === result.createdBy);
+                  const isDeleting = deletingId === result.id;
                   return (
                     <tr key={result.id} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
                         {formatDateTime(result.createdAt)}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-                        {doctor?.icpNumber || doctor?.email || 'Neznámý'}
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                        {truncateText(doctor?.icpNumber || doctor?.email || 'Neznámý', 20)}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-                        {result.testTypeName || '-'}
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900" title={result.testTypeName || ''}>
+                        {truncateText(result.testTypeName || '-', 30)}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-                        {result.pathogenName || '-'}
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900" title={result.pathogenName || ''}>
+                        {truncateText(result.pathogenName || '-', 25)}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-                        {result.patientIdentifier || '-'}
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                        {truncateText(result.patientIdentifier || '-', 15)}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
                         {getYearOfBirth(result.dateOfBirth)}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-                        {result.city}
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                        {truncateText(result.city || '-', 20)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                        <button
+                          onClick={() => handleDelete(result.id)}
+                          disabled={isDeleting}
+                          className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed text-xs px-2 py-1"
+                          title="Smazat test"
+                        >
+                          {isDeleting ? 'Mažu...' : 'Smazat'}
+                        </button>
                       </td>
                     </tr>
                   );

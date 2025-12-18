@@ -962,6 +962,7 @@ router.put(
  * /api/test-results/{id}:
  *   delete:
  *     summary: Delete a test result (doctor/user only)
+ *     description: Can be authenticated via Bearer token OR via unique link token (if user doesn't require password)
  *     tags: [Test Results]
  *     security:
  *       - bearerAuth: []
@@ -971,6 +972,11 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: token
+ *         schema:
+ *           type: string
+ *         description: Unique link token (alternative to Bearer token)
  *     responses:
  *       200:
  *         description: Test result deleted successfully
@@ -981,7 +987,8 @@ router.put(
  */
 router.delete(
   '/:id',
-  authenticate,
+  authenticateDoctor,
+  requireDoctor,
   async (req: Request, res: Response) => {
     const authReq = req as AuthenticatedRequest;
     if (!authReq.user) {

@@ -375,8 +375,8 @@ export default function TestsList({ initialTestResults, initialTotal, initialDoc
                       <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900" title={result.testTypeName || ''}>
                         {truncateText(result.testTypeName || '-', 30)}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900" title={result.pathogenName || ''}>
-                        {truncateText(result.pathogenName || '-', 25)}
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900" title={(result.pathogenNames || []).join(', ') || ''}>
+                        {truncateText((result.pathogenNames || []).join(', ') || '-', 25)}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
                         {truncateText(result.patientIdentifier || '-', 15)}
@@ -385,7 +385,7 @@ export default function TestsList({ initialTestResults, initialTotal, initialDoc
                         {getYearOfBirth(result.dateOfBirth)}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
-                        {truncateText(result.city || '-', 20)}
+                        {truncateText(result.cityName || result.city || '-', 20)}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
                         <button

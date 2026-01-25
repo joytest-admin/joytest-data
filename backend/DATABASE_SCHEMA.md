@@ -280,7 +280,6 @@ CREATE TABLE public.test_results (
   ecmo BOOLEAN,
   pregnancy BOOLEAN,
   trimester INTEGER,
-  pathogen_id UUID REFERENCES pathogens(id) ON DELETE SET NULL,
   patient_id UUID REFERENCES patients(id) ON DELETE SET NULL,
   city_id INTEGER NOT NULL REFERENCES cities(id),
   created_by UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
@@ -296,7 +295,6 @@ CREATE INDEX idx_test_results_created_by ON test_results(created_by);
 CREATE INDEX idx_test_results_created_at ON test_results(created_at);
 CREATE INDEX idx_test_results_city_id ON test_results(city_id);
 CREATE INDEX idx_test_results_test_date ON test_results(test_date);
-CREATE INDEX idx_test_results_pathogen_id ON test_results(pathogen_id) WHERE pathogen_id IS NOT NULL;
 CREATE INDEX idx_test_results_patient_id ON test_results(patient_id);
 ```
 
@@ -310,12 +308,36 @@ CREATE INDEX idx_test_results_patient_id ON test_results(patient_id);
 | **test_date** | Date the test was performed |
 | **symptoms** | Array of symptom strings |
 | **trimester** | 1, 2, or 3; only meaningful when `pregnancy = true` |
-| **pathogen_id** | Detected pathogen, if any |
 | **patient_id** | Optional link to `patients` |
 | **city_id** | FK to `cities`; where the test was performed |
 | **created_by** | Doctor who created the record (`users.id`) |
 
-Vaccinations are stored in `test_result_vaccinations`, not on this table.
+Pathogens are stored in `test_result_pathogens`, not on this table. Vaccinations are stored in `test_result_vaccinations`, not on this table.
+
+---
+
+## Test Result Pathogens (Junction)
+
+Many-to-many: which pathogen(s) were detected for a positive test result. A test can have multiple pathogens.
+
+```sql
+CREATE TABLE public.test_result_pathogens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  test_result_id UUID NOT NULL REFERENCES test_results(id) ON DELETE CASCADE,
+  pathogen_id UUID NOT NULL REFERENCES pathogens(id) ON DELETE CASCADE,
+  created_at TIMESTAMP NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP NOT NULL DEFAULT now(),
+  UNIQUE (test_result_id, pathogen_id)
+);
+
+CREATE INDEX idx_test_result_pathogens_test_result_id ON test_result_pathogens(test_result_id);
+CREATE INDEX idx_test_result_pathogens_pathogen_id ON test_result_pathogens(pathogen_id);
+```
+
+- **test_result_id**: FK to `test_results`
+- **pathogen_id**: FK to `pathogens`
+- **UNIQUE (test_result_id, pathogen_id)**: Prevents duplicate pathogen per test
+- A test is **positive** when it has at least one row here; **negative** when it has none
 
 ---
 
@@ -418,7 +440,8 @@ Because of foreign keys, create objects in this order:
 4. `common_symptoms`, `pathogens`, `test_types`, `vaccinations`
 5. `test_type_pathogens`
 6. `patients` (depends on `users`)
-7. `test_results` (depends on `users`, `cities`, `test_types`, `pathogens`, `patients`)
-8. `test_result_vaccinations` (depends on `test_results`, `vaccinations`)
-9. `feedback` (depends on `users`)
-10. `translations` (no FKs; `entity_id` is logical only)
+7. `test_results` (depends on `users`, `cities`, `test_types`, `patients`)
+8. `test_result_pathogens` (depends on `test_results`, `pathogens`)
+9. `test_result_vaccinations` (depends on `test_results`, `vaccinations`)
+10. `feedback` (depends on `users`)
+11. `translations` (no FKs; `entity_id` is logical only)

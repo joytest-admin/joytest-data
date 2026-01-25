@@ -20,8 +20,11 @@ import {
   findAdminTestResults,
   findAdminTestResultsForExport,
   findTestResultVaccinationsByTestResultId,
+  findTestResultPathogensByTestResultId,
   createTestResultVaccination,
+  createTestResultPathogens,
   deleteTestResultVaccinationsByTestResultId,
+  deleteTestResultPathogensByTestResultId,
 } from '../queries/test-result.queries';
 import { findTestTypeById } from '../queries/test-type.queries';
 import { findVaccinationById } from '../queries/vaccination.queries';
@@ -112,8 +115,11 @@ export const getTestResultById = async (
   // Fetch joined data
   const testType = await findTestTypeById(testResult.testTypeId);
 
-  // Load vaccinations for response
-  const vaccinations = await findTestResultVaccinationsByTestResultId(testResult.id);
+  // Load vaccinations and pathogens for response
+  const [vaccinations, pathogens] = await Promise.all([
+    findTestResultVaccinationsByTestResultId(testResult.id),
+    findTestResultPathogensByTestResultId(testResult.id),
+  ]);
   const vaccinationResponses = await Promise.all(
     vaccinations.map(async (v) => {
       const vaccinationEntity = await findVaccinationById(v.vaccinationId);
@@ -139,10 +145,8 @@ export const getTestResultById = async (
     dateOfBirth: testResult.dateOfBirth,
     testDate: testResult.testDate,
     symptoms: testResult.symptoms,
-    pathogenId: testResult.pathogenId,
-    pathogenName: testResult.pathogenId
-      ? (await findPathogenById(testResult.pathogenId))?.name || null
-      : null,
+    pathogenIds: pathogens.map((p) => p.pathogenId),
+    pathogenNames: pathogens.map((p) => p.pathogenName),
     otherInformations: testResult.otherInformations,
     sari: testResult.sari,
     atb: testResult.atb,
@@ -178,11 +182,14 @@ export const createTestResultService = async (
   }
 
 
-  // Validate pathogen exists if provided
-  if (data.pathogenId) {
-    const pathogen = await findPathogenById(data.pathogenId);
-    if (!pathogen) {
-      throw new BadRequestError('Pathogen not found');
+  // Validate pathogens exist if provided (for positive result)
+  const pathogenIds = data.pathogenIds || [];
+  if (pathogenIds.length > 0) {
+    for (const pid of pathogenIds) {
+      const pathogen = await findPathogenById(pid);
+      if (!pathogen) {
+        throw new BadRequestError('Pathogen not found');
+      }
     }
   }
 
@@ -251,8 +258,8 @@ export const createTestResultService = async (
       testTypeId: data.testTypeId,
       dateOfBirth,
       testDate,
-      symptoms: symptoms, // Use the normalized array (empty if undefined)
-      pathogenId: data.pathogenId || null,
+      symptoms: symptoms,
+      pathogenIds: data.pathogenIds,
       otherInformations: data.otherInformations,
       sari: data.sari,
       atb: data.atb,
@@ -281,13 +288,11 @@ export const createTestResultService = async (
     }
   }
 
-  // Get pathogen name if pathogenId exists
-  const pathogen = testResult.pathogenId
-    ? await findPathogenById(testResult.pathogenId)
-    : null;
-
-  // Load vaccinations for response
-  const vaccinations = await findTestResultVaccinationsByTestResultId(testResult.id);
+  // Load vaccinations and pathogens for response
+  const [vaccinations, pathogens] = await Promise.all([
+    findTestResultVaccinationsByTestResultId(testResult.id),
+    findTestResultPathogensByTestResultId(testResult.id),
+  ]);
   const vaccinationResponses = await Promise.all(
     vaccinations.map(async (v) => {
       const vaccinationEntity = await findVaccinationById(v.vaccinationId);
@@ -304,11 +309,6 @@ export const createTestResultService = async (
     }),
   );
 
-  // Get vaccination name for backward compatibility
-  const firstVaccination = vaccinations.length > 0
-    ? await findVaccinationById(vaccinations[0].vaccinationId)
-    : null;
-
   return {
     id: testResult.id,
     cityId: testResult.cityId,
@@ -318,8 +318,8 @@ export const createTestResultService = async (
     dateOfBirth: testResult.dateOfBirth,
     testDate: testResult.testDate,
     symptoms: testResult.symptoms,
-    pathogenId: testResult.pathogenId,
-    pathogenName: pathogen?.name || null,
+    pathogenIds: pathogens.map((p) => p.pathogenId),
+    pathogenNames: pathogens.map((p) => p.pathogenName),
     otherInformations: testResult.otherInformations,
     sari: testResult.sari,
     atb: testResult.atb,
@@ -393,11 +393,13 @@ export const updateTestResultService = async (
     }
   }
 
-  // Validate pathogen if provided
-  if (data.pathogenId) {
-    const pathogen = await findPathogenById(data.pathogenId);
-    if (!pathogen) {
-      throw new BadRequestError('Pathogen not found');
+  // Validate pathogens if provided
+  if (data.pathogenIds !== undefined && data.pathogenIds.length > 0) {
+    for (const pid of data.pathogenIds) {
+      const pathogen = await findPathogenById(pid);
+      if (!pathogen) {
+        throw new BadRequestError('Pathogen not found');
+      }
     }
   }
 
@@ -467,7 +469,6 @@ export const updateTestResultService = async (
   if (data.testTypeId !== undefined) updateData.testTypeId = data.testTypeId;
   if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth;
   if (testDate !== undefined) updateData.testDate = testDate;
-  if (data.pathogenId !== undefined) updateData.pathogenId = data.pathogenId;
   if (data.otherInformations !== undefined) updateData.otherInformations = data.otherInformations;
   if (data.sari !== undefined) updateData.sari = data.sari;
   if (data.atb !== undefined) updateData.atb = data.atb;
@@ -497,6 +498,14 @@ export const updateTestResultService = async (
 
   const testResult = await updateTestResult(id, updateData);
 
+  // Update pathogens in test_result_pathogens if provided
+  if (data.pathogenIds !== undefined) {
+    await deleteTestResultPathogensByTestResultId(id);
+    if (data.pathogenIds.length > 0) {
+      await createTestResultPathogens(id, data.pathogenIds);
+    }
+  }
+
   // Update vaccinations in test_result_vaccinations table if provided
   if (data.vaccinations !== undefined) {
     // Delete all existing vaccinations
@@ -517,13 +526,11 @@ export const updateTestResultService = async (
   }
 
   // Fetch joined data for response
-  const testType = await findTestTypeById(testResult.testTypeId);
-  const pathogen = testResult.pathogenId
-    ? await findPathogenById(testResult.pathogenId)
-    : null;
-
-  // Load vaccinations for response
-  const vaccinations = await findTestResultVaccinationsByTestResultId(id);
+  const [testType, pathogens, vaccinations] = await Promise.all([
+    findTestTypeById(testResult.testTypeId),
+    findTestResultPathogensByTestResultId(id),
+    findTestResultVaccinationsByTestResultId(id),
+  ]);
   const vaccinationResponses = await Promise.all(
     vaccinations.map(async (v) => {
       const vaccinationEntity = await findVaccinationById(v.vaccinationId);
@@ -549,8 +556,8 @@ export const updateTestResultService = async (
     dateOfBirth: testResult.dateOfBirth,
     testDate: testResult.testDate,
     symptoms: testResult.symptoms,
-    pathogenId: testResult.pathogenId,
-    pathogenName: pathogen?.name || null,
+    pathogenIds: pathogens.map((p) => p.pathogenId),
+    pathogenNames: pathogens.map((p) => p.pathogenName),
     otherInformations: testResult.otherInformations,
     sari: testResult.sari,
     atb: testResult.atb,

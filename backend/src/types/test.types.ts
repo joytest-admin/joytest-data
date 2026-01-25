@@ -33,7 +33,7 @@ export interface CommonSymptomEntity {
 }
 
 /**
- * Test result entity (stored in database)
+ * Test result entity (stored in database, without pathogens; use test_result_pathogens)
  */
 export interface TestResultEntity {
   id: string;
@@ -43,7 +43,6 @@ export interface TestResultEntity {
   dateOfBirth: Date;
   testDate: Date; // Date when the test was actually performed
   symptoms: string[];
-  pathogenId: string | null;
   otherInformations: string | null;
   sari: boolean | null;
   atb: boolean | null;
@@ -56,6 +55,18 @@ export interface TestResultEntity {
   patientId: string | null;
   patientIdentifier?: string | null;
   createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Test result pathogen entity (test_result_pathogens junction)
+ */
+export interface TestResultPathogenEntity {
+  id: string;
+  testResultId: string;
+  pathogenId: string;
+  pathogenName?: string; // When joined with pathogens
   createdAt: Date;
   updatedAt: Date;
 }
@@ -114,7 +125,7 @@ export interface CreateTestResultRequest {
   dateOfBirth: string; // ISO date string
   testDate: string; // ISO date string - Date when the test was actually performed
   symptoms?: string[]; // Optional - can be empty array or undefined
-  pathogenId?: string; // Required if result is positive
+  pathogenIds?: string[]; // Required if result is positive (at least one)
   patientId?: string;
   otherInformations?: string;
   sari?: boolean;
@@ -138,7 +149,7 @@ export interface UpdateTestResultRequest {
   dateOfBirth?: string; // ISO date string
   testDate?: string; // ISO date string - Date when the test was actually performed
   symptoms?: string[];
-  pathogenId?: string;
+  pathogenIds?: string[]; // Omit or [] to clear; at least one when positive
   patientId?: string | null;
   otherInformations?: string;
   sari?: boolean;
@@ -225,8 +236,8 @@ export interface TestResultResponse {
   dateOfBirth: Date;
   testDate: Date; // Date when the test was actually performed
   symptoms: string[];
-  pathogenId: string | null;
-  pathogenName?: string | null; // Populated when joining with pathogens
+  pathogenIds?: string[]; // From test_result_pathogens
+  pathogenNames?: string[]; // Populated when joining with pathogens
   otherInformations: string | null;
   sari: boolean | null;
   atb: boolean | null;

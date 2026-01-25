@@ -162,7 +162,7 @@ export interface CreateTestResultRequest {
   dateOfBirth: string; // ISO date string
   testDate: string; // ISO date string - Date when the test was actually performed
   symptoms?: string[]; // Optional - can be empty array or undefined
-  pathogenId?: string; // Required if result is positive
+  pathogenIds?: string[]; // Required if result is positive (one or more)
   patientId?: string;
   token?: string; // Unique link token (for passwordless authentication)
   otherInformations?: string;
@@ -183,7 +183,7 @@ export interface UpdateTestResultRequest {
   dateOfBirth?: string; // ISO date string
   testDate?: string; // ISO date string - Date when the test was actually performed
   symptoms?: string[];
-  pathogenId?: string;
+  pathogenIds?: string[];
   patientId?: string | null;
   otherInformations?: string;
   sari?: boolean;
@@ -207,8 +207,8 @@ export interface TestResultResponse {
   dateOfBirth: string;
   testDate: string; // Date when the test was actually performed
   symptoms: string[];
-  pathogenId?: string | null;
-  pathogenName?: string | null;
+  pathogenIds?: string[];
+  pathogenNames?: string[];
   otherInformations: string | null;
   sari: boolean | null;
   atb: boolean | null;

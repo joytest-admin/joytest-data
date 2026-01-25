@@ -173,13 +173,14 @@ export interface FeedbackResponse {
 export interface TestResultResponse {
   id: string;
   city: string;
+  cityName?: string | null; // Populated from cities when joined
   icpNumber: string;
   testTypeId: string;
   testTypeName?: string;
   dateOfBirth: string;
   symptoms: string[];
-  pathogenId?: string | null;
-  pathogenName?: string | null;
+  pathogenIds?: string[];
+  pathogenNames?: string[];
   otherInformations: string | null;
   sari: boolean | null;
   atb: boolean | null;

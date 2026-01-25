@@ -186,6 +186,19 @@ export const createTestResultValidator = [
     .optional()
     .isUUID()
     .withMessage('Patient ID must be a valid UUID'),
+  body('pathogenIds')
+    .optional()
+    .isArray()
+    .withMessage('Pathogen IDs must be an array')
+    .custom((value) => {
+      if (value !== undefined && value !== null && !Array.isArray(value)) {
+        throw new Error('Pathogen IDs must be an array');
+      }
+      if (Array.isArray(value) && !value.every((id) => typeof id === 'string' && /^[0-9a-fA-F-]{36}$/.test(id))) {
+        throw new Error('Each pathogen ID must be a valid UUID');
+      }
+      return true;
+    }),
 ];
 
 /**
@@ -342,6 +355,19 @@ export const updateTestResultValidator = [
     .optional({ nullable: true })
     .custom((value) => value === null || /^[0-9a-fA-F-]{36}$/.test(value))
     .withMessage('Patient ID must be a valid UUID or null'),
+  body('pathogenIds')
+    .optional()
+    .isArray()
+    .withMessage('Pathogen IDs must be an array')
+    .custom((value) => {
+      if (value !== undefined && value !== null && !Array.isArray(value)) {
+        throw new Error('Pathogen IDs must be an array');
+      }
+      if (Array.isArray(value) && !value.every((id) => typeof id === 'string' && /^[0-9a-fA-F-]{36}$/.test(id))) {
+        throw new Error('Each pathogen ID must be a valid UUID');
+      }
+      return true;
+    }),
 ];
 
 /**

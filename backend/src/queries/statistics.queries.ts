@@ -25,11 +25,10 @@ export const getPositiveNegativeCounts = async (
 
   let query = `
     SELECT
-      COUNT(*) FILTER (WHERE tr.pathogen_id IS NOT NULL) as positive,
-      COUNT(*) FILTER (WHERE tr.pathogen_id IS NULL) as negative
+      COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM test_result_pathogens trp WHERE trp.test_result_id = tr.id)) as positive,
+      COUNT(*) FILTER (WHERE NOT EXISTS (SELECT 1 FROM test_result_pathogens trp WHERE trp.test_result_id = tr.id)) as negative
     FROM test_results tr
     LEFT JOIN test_types tt ON tr.test_type_id = tt.id
-    LEFT JOIN pathogens p ON tr.pathogen_id = p.id
     LEFT JOIN patients pat ON tr.patient_id = pat.id
     LEFT JOIN cities c ON tr.city_id = c.id
     WHERE tr.created_by = $1
@@ -42,7 +41,7 @@ export const getPositiveNegativeCounts = async (
       AND (
         c.name ILIKE $${paramIndex} OR
         tt.name ILIKE $${paramIndex} OR
-        p.name ILIKE $${paramIndex} OR
+        EXISTS (SELECT 1 FROM test_result_pathogens trp JOIN pathogens p2 ON p2.id = trp.pathogen_id WHERE trp.test_result_id = tr.id AND p2.name ILIKE $${paramIndex}) OR
         pat.identifier ILIKE $${paramIndex} OR
         tr.icp_number ILIKE $${paramIndex}
       )
@@ -107,17 +106,16 @@ export const getPositiveByAgeGroupsCounts = async (
   const pool = getDatabasePool();
   const { search, city, startDate, endDate } = options;
 
-  // Calculate age at the time the test was created
+  const pos = `EXISTS (SELECT 1 FROM test_result_pathogens trp WHERE trp.test_result_id = tr.id)`;
   let query = `
     SELECT
-      COUNT(*) FILTER (WHERE tr.pathogen_id IS NOT NULL AND EXTRACT(YEAR FROM AGE(tr.created_at, tr.date_of_birth)) BETWEEN 0 AND 5) as age_0_5,
-      COUNT(*) FILTER (WHERE tr.pathogen_id IS NOT NULL AND EXTRACT(YEAR FROM AGE(tr.created_at, tr.date_of_birth)) BETWEEN 6 AND 14) as age_6_14,
-      COUNT(*) FILTER (WHERE tr.pathogen_id IS NOT NULL AND EXTRACT(YEAR FROM AGE(tr.created_at, tr.date_of_birth)) BETWEEN 15 AND 24) as age_15_24,
-      COUNT(*) FILTER (WHERE tr.pathogen_id IS NOT NULL AND EXTRACT(YEAR FROM AGE(tr.created_at, tr.date_of_birth)) BETWEEN 25 AND 64) as age_25_64,
-      COUNT(*) FILTER (WHERE tr.pathogen_id IS NOT NULL AND EXTRACT(YEAR FROM AGE(tr.created_at, tr.date_of_birth)) >= 65) as age_65_plus
+      COUNT(*) FILTER (WHERE ${pos} AND EXTRACT(YEAR FROM AGE(tr.created_at, tr.date_of_birth)) BETWEEN 0 AND 5) as age_0_5,
+      COUNT(*) FILTER (WHERE ${pos} AND EXTRACT(YEAR FROM AGE(tr.created_at, tr.date_of_birth)) BETWEEN 6 AND 14) as age_6_14,
+      COUNT(*) FILTER (WHERE ${pos} AND EXTRACT(YEAR FROM AGE(tr.created_at, tr.date_of_birth)) BETWEEN 15 AND 24) as age_15_24,
+      COUNT(*) FILTER (WHERE ${pos} AND EXTRACT(YEAR FROM AGE(tr.created_at, tr.date_of_birth)) BETWEEN 25 AND 64) as age_25_64,
+      COUNT(*) FILTER (WHERE ${pos} AND EXTRACT(YEAR FROM AGE(tr.created_at, tr.date_of_birth)) >= 65) as age_65_plus
     FROM test_results tr
     LEFT JOIN test_types tt ON tr.test_type_id = tt.id
-    LEFT JOIN pathogens p ON tr.pathogen_id = p.id
     LEFT JOIN patients pat ON tr.patient_id = pat.id
     LEFT JOIN cities c ON tr.city_id = c.id
     WHERE tr.created_by = $1
@@ -130,7 +128,7 @@ export const getPositiveByAgeGroupsCounts = async (
       AND (
         c.name ILIKE $${paramIndex} OR
         tt.name ILIKE $${paramIndex} OR
-        p.name ILIKE $${paramIndex} OR
+        EXISTS (SELECT 1 FROM test_result_pathogens trp JOIN pathogens p2 ON p2.id = trp.pathogen_id WHERE trp.test_result_id = tr.id AND p2.name ILIKE $${paramIndex}) OR
         pat.identifier ILIKE $${paramIndex} OR
         tr.icp_number ILIKE $${paramIndex}
       )
@@ -202,12 +200,12 @@ export const getPositiveByPathogensCounts = async (
       p.name as pathogen_name,
       COUNT(*) as count
     FROM test_results tr
+    JOIN test_result_pathogens trp ON trp.test_result_id = tr.id
+    JOIN pathogens p ON p.id = trp.pathogen_id
     LEFT JOIN test_types tt ON tr.test_type_id = tt.id
-    LEFT JOIN pathogens p ON tr.pathogen_id = p.id
     LEFT JOIN patients pat ON tr.patient_id = pat.id
     LEFT JOIN cities c ON tr.city_id = c.id
     WHERE tr.created_by = $1
-      AND tr.pathogen_id IS NOT NULL
   `;
   const params: any[] = [doctorId];
   let paramIndex = 2;
@@ -296,7 +294,7 @@ export const getPositivePathogensByAgeGroupsCounts = async (
       AND (
         c.name ILIKE $${paramIndex} OR
         tt.name ILIKE $${paramIndex} OR
-        p.name ILIKE $${paramIndex} OR
+        EXISTS (SELECT 1 FROM test_result_pathogens trp JOIN pathogens p2 ON p2.id = trp.pathogen_id WHERE trp.test_result_id = tr.id AND p2.name ILIKE $${paramIndex}) OR
         pat.identifier ILIKE $${paramIndex} OR
         tr.icp_number ILIKE $${paramIndex}
       )
@@ -356,14 +354,14 @@ export const getPositivePathogensByAgeGroupsCounts = async (
           ELSE NULL
         END as age_group
       FROM test_results tr
+      JOIN test_result_pathogens trp ON trp.test_result_id = tr.id
+      JOIN pathogens p ON p.id = trp.pathogen_id
       LEFT JOIN test_types tt ON tr.test_type_id = tt.id
-      LEFT JOIN pathogens p ON tr.pathogen_id = p.id
       LEFT JOIN patients pat ON tr.patient_id = pat.id
       LEFT JOIN cities c ON tr.city_id = c.id
       LEFT JOIN districts d ON c.district_id = d.id
       LEFT JOIN regions r ON d.region_id = r.id
       WHERE ${doctorFilter || '1=1'}
-        AND tr.pathogen_id IS NOT NULL
         ${filterConditions}
     ) subquery
     WHERE age_group IS NOT NULL
@@ -515,12 +513,12 @@ export const getPositiveTrendsByPathogensCounts = async (
     pathogens_list AS (
       SELECT DISTINCT p.name as pathogen_name
       FROM test_results tr
-      LEFT JOIN pathogens p ON tr.pathogen_id = p.id
+      JOIN test_result_pathogens trp ON trp.test_result_id = tr.id
+      JOIN pathogens p ON p.id = trp.pathogen_id
       LEFT JOIN cities c ON tr.city_id = c.id
       LEFT JOIN districts d ON c.district_id = d.id
       LEFT JOIN regions r ON d.region_id = r.id
       WHERE ${doctorFilter || '1=1'}
-        AND tr.pathogen_id IS NOT NULL
         ${filterConditions}
     ),
     actual_data AS (
@@ -529,14 +527,14 @@ export const getPositiveTrendsByPathogensCounts = async (
         p.name as pathogen_name,
         COUNT(*) as count
       FROM test_results tr
+      JOIN test_result_pathogens trp ON trp.test_result_id = tr.id
+      JOIN pathogens p ON p.id = trp.pathogen_id
       LEFT JOIN test_types tt ON tr.test_type_id = tt.id
-      LEFT JOIN pathogens p ON tr.pathogen_id = p.id
       LEFT JOIN patients pat ON tr.patient_id = pat.id
       LEFT JOIN cities c ON tr.city_id = c.id
       LEFT JOIN districts d ON c.district_id = d.id
       LEFT JOIN regions r ON d.region_id = r.id
       WHERE ${doctorFilter || '1=1'}
-        AND tr.pathogen_id IS NOT NULL
         ${filterConditions}
       GROUP BY DATE_TRUNC('${dateTrunc}', tr.created_at)::date, p.name
     ),
@@ -725,12 +723,12 @@ export const getPositivePathogenDistributionByScope = async (
           p.name as pathogen_name,
           COUNT(*) as count
         FROM test_results tr
-        LEFT JOIN pathogens p ON tr.pathogen_id = p.id
+        JOIN test_result_pathogens trp ON trp.test_result_id = tr.id
+        JOIN pathogens p ON p.id = trp.pathogen_id
         LEFT JOIN cities c ON tr.city_id = c.id
         LEFT JOIN districts d ON c.district_id = d.id
         LEFT JOIN regions r ON d.region_id = r.id
         WHERE ${whereClause}
-          AND tr.pathogen_id IS NOT NULL
           ${dateFilter}
         GROUP BY p.name
       ),

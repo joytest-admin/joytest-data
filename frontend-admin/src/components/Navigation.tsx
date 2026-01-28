@@ -27,6 +27,7 @@ export default function Navigation() {
   const navItems = [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/doctors', label: 'Správa doktorů' },
+    { href: '/notifications', label: 'Notifikace' },
     { href: '/tests', label: 'Testy' },
     { href: '/test-types', label: 'Typy testů' },
     { href: '/vaccinations', label: 'Typy vakcín' },

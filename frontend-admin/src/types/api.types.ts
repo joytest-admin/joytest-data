@@ -250,4 +250,22 @@ export interface CityResponse {
   createdAt: string;
 }
 
+/**
+ * Notifications types
+ */
+export type NotificationType = 'info' | 'warning' | 'error';
+
+export interface NotificationResponse {
+  id: string;
+  type: NotificationType;
+  message: string;
+  createdAt: string; // ISO string
+}
+
+export interface CreateNotificationRequest {
+  type: NotificationType;
+  message: string;
+  expiresAt?: string | null;
+}
+
 

@@ -13,6 +13,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '@/src/contexts/TranslationContext';
 import { apiPost } from '@/src/lib/api-client';
 import LanguageSwitcher from './LanguageSwitcher';
+import NotificationsBar from './NotificationsBar';
 
 interface HeaderProps {
   linkToken: string | null;
@@ -341,6 +342,8 @@ export default function Header({
         </div>
         )}
       </div>
+      {/* Notifications (below header row) */}
+      {(isAuthenticated || linkToken) && <NotificationsBar linkToken={linkToken} limit={3} />}
     </header>
   );
 }

@@ -322,3 +322,15 @@ export interface PathogensByAgeGroupsStats {
   count: number;
 }
 
+/**
+ * Notifications types
+ */
+export type NotificationType = 'info' | 'warning' | 'error';
+
+export interface NotificationResponse {
+  id: string;
+  type: NotificationType;
+  message: string;
+  createdAt: string; // ISO string
+}
+

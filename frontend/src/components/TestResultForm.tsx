@@ -208,15 +208,14 @@ export default function TestResultForm({
   const cityInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  // Load initial city from profile, initialData, or localStorage
+  // Load initial city from localStorage, initialData, or profileCityId
   useEffect(() => {
     const loadInitialCity = async () => {
-      // Priority: initialData > profileCityId > localStorage (for new forms only)
-      const cityIdToLoad = initialData?.cityId || profileCityId;
-      if (cityIdToLoad) {
+      // Edit mode: always use initialData.cityId (highest priority)
+      if (initialData?.cityId) {
         setLoadingInitialCity(true);
         try {
-          const city = await getCityById(cityIdToLoad);
+          const city = await getCityById(initialData.cityId);
           if (city) {
             setSelectedCity(city);
             setCitySearchQuery(city.name);
@@ -226,20 +225,46 @@ export default function TestResultForm({
         } finally {
           setLoadingInitialCity(false);
         }
-      } else if (!initialData && !profileCityId) {
-        // New form with no profile city: try to load from localStorage
-        setLoadingInitialCity(true);
-        try {
-          const lastCity = await getLastCityFromStorage();
-          if (lastCity) {
-            setSelectedCity(lastCity);
-            setCitySearchQuery(lastCity.name);
-          }
-        } catch (err) {
-          console.error('Failed to load last city from localStorage:', err);
-        } finally {
+        return; // Edit mode: done
+      }
+
+      // New form: prioritize localStorage, then profileCityId
+      setLoadingInitialCity(true);
+      try {
+        // First: try localStorage (last used city on this computer)
+        const lastCity = await getLastCityFromStorage();
+        if (lastCity) {
+          setSelectedCity(lastCity);
+          setCitySearchQuery(lastCity.name);
           setLoadingInitialCity(false);
+          return; // Success: localStorage city loaded
         }
+
+        // Fallback: use profileCityId if available
+        if (profileCityId) {
+          const city = await getCityById(profileCityId);
+          if (city) {
+            setSelectedCity(city);
+            setCitySearchQuery(city.name);
+          }
+        }
+        // If no localStorage and no profileCityId, leave empty (no action needed)
+      } catch (err) {
+        console.error('Failed to load initial city:', err);
+        // If localStorage city failed, try profileCityId as fallback
+        if (profileCityId) {
+          try {
+            const city = await getCityById(profileCityId);
+            if (city) {
+              setSelectedCity(city);
+              setCitySearchQuery(city.name);
+            }
+          } catch (profileErr) {
+            console.error('Failed to load profile city:', profileErr);
+          }
+        }
+      } finally {
+        setLoadingInitialCity(false);
       }
     };
     loadInitialCity();

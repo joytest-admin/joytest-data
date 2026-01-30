@@ -885,7 +885,7 @@ function TestsPageContent() {
                               {truncateTestType(result.testTypeName)}
                             </td>
                             <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {result.pathogenName || '-'}
+                              {(result.pathogenNames || []).join(', ') || '-'}
                             </td>
                             <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {result.patientIdentifier || '-'}

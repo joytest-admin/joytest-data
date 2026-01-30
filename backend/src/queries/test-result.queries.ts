@@ -8,19 +8,19 @@ import { TestResultEntity, TestResultResponse, TestResultVaccinationEntity } fro
 import { NotFoundError, InternalServerError } from '../utils/errors';
 import { mapTestResultRow } from '../utils/db-mapper';
 
+/** Subquery to get pathogen IDs and names from test_result_pathogens (for SELECT) */
+const PATHOGEN_IDS_SUB = `(SELECT COALESCE(array_agg(trp.pathogen_id::text ORDER BY p2.name), ARRAY[]::text[]) FROM test_result_pathogens trp JOIN pathogens p2 ON p2.id = trp.pathogen_id WHERE trp.test_result_id = tr.id)`;
+const PATHOGEN_NAMES_SUB = `(SELECT COALESCE(array_agg(p2.name ORDER BY p2.name), ARRAY[]::text[]) FROM test_result_pathogens trp JOIN pathogens p2 ON p2.id = trp.pathogen_id WHERE trp.test_result_id = tr.id)`;
+
 /**
- * Find test result by ID
- * @param id - Test result ID
- * @returns Test result entity or null if not found
+ * Find test result by ID (pathogens loaded via findTestResultPathogensByTestResultId in service)
  */
 export const findTestResultById = async (id: string): Promise<TestResultEntity | null> => {
   const pool = getDatabasePool();
   const result = await pool.query(
-    `    SELECT tr.*, tt.name as test_type_name, p.name as pathogen_name, pat.identifier as patient_identifier,
-           c.name as city_name
+    `SELECT tr.*, tt.name as test_type_name, pat.identifier as patient_identifier, c.name as city_name
      FROM test_results tr
      LEFT JOIN test_types tt ON tr.test_type_id = tt.id
-     LEFT JOIN pathogens p ON tr.pathogen_id = p.id
      LEFT JOIN patients pat ON tr.patient_id = pat.id
      LEFT JOIN cities c ON tr.city_id = c.id
      WHERE tr.id = $1`,
@@ -32,6 +32,24 @@ export const findTestResultById = async (id: string): Promise<TestResultEntity |
   }
 
   return mapTestResultRow(result.rows[0]);
+};
+
+/**
+ * Find pathogens for a test result (test_result_pathogens + pathogen names)
+ */
+export const findTestResultPathogensByTestResultId = async (
+  testResultId: string,
+): Promise<Array<{ pathogenId: string; pathogenName: string }>> => {
+  const pool = getDatabasePool();
+  const result = await pool.query(
+    `SELECT trp.pathogen_id as "pathogenId", p.name as "pathogenName"
+     FROM test_result_pathogens trp
+     JOIN pathogens p ON p.id = trp.pathogen_id
+     WHERE trp.test_result_id = $1
+     ORDER BY p.name`,
+    [testResultId],
+  );
+  return result.rows.map((r) => ({ pathogenId: r.pathogenId, pathogenName: r.pathogenName }));
 };
 
 /**
@@ -48,11 +66,10 @@ export const findAllTestResults = async (
 ): Promise<TestResultResponse[]> => {
   const pool = getDatabasePool();
   let query = `
-    SELECT tr.*, tt.name as test_type_name, p.name as pathogen_name, pat.identifier as patient_identifier,
-           c.name as city_name
+    SELECT tr.*, tt.name as test_type_name, pat.identifier as patient_identifier, c.name as city_name,
+           ${PATHOGEN_IDS_SUB} AS pathogen_ids, ${PATHOGEN_NAMES_SUB} AS pathogen_names
     FROM test_results tr
     LEFT JOIN test_types tt ON tr.test_type_id = tt.id
-    LEFT JOIN pathogens p ON tr.pathogen_id = p.id
     LEFT JOIN patients pat ON tr.patient_id = pat.id
     LEFT JOIN cities c ON tr.city_id = c.id
   `;
@@ -89,8 +106,8 @@ export const findAllTestResults = async (
     dateOfBirth: row.date_of_birth,
     testDate: row.test_date,
     symptoms: row.symptoms || [],
-    pathogenId: row.pathogen_id || null,
-    pathogenName: row.pathogen_name || null,
+    pathogenIds: row.pathogen_ids || [],
+    pathogenNames: row.pathogen_names || [],
     otherInformations: row.other_informations,
     sari: row.sari,
     atb: row.atb,
@@ -134,13 +151,12 @@ export const findDoctorTestResults = async (
     SELECT
       tr.*,
       tt.name as test_type_name,
-      p.name as pathogen_name,
       pat.identifier as patient_identifier,
       c.name as city_name,
+      ${PATHOGEN_IDS_SUB} AS pathogen_ids, ${PATHOGEN_NAMES_SUB} AS pathogen_names,
       COUNT(*) OVER() AS full_count
     FROM test_results tr
     LEFT JOIN test_types tt ON tr.test_type_id = tt.id
-    LEFT JOIN pathogens p ON tr.pathogen_id = p.id
     LEFT JOIN patients pat ON tr.patient_id = pat.id
     LEFT JOIN cities c ON tr.city_id = c.id
     WHERE tr.created_by = $1
@@ -153,7 +169,7 @@ export const findDoctorTestResults = async (
       AND (
         c.name ILIKE $${paramIndex} OR
         tt.name ILIKE $${paramIndex} OR
-        p.name ILIKE $${paramIndex} OR
+        EXISTS (SELECT 1 FROM test_result_pathogens trp JOIN pathogens p2 ON p2.id = trp.pathogen_id WHERE trp.test_result_id = tr.id AND p2.name ILIKE $${paramIndex}) OR
         pat.identifier ILIKE $${paramIndex} OR
         tr.icp_number ILIKE $${paramIndex}
       )
@@ -180,13 +196,13 @@ export const findDoctorTestResults = async (
     paramIndex++;
   }
 
-  // Map sortable columns to their actual table columns or joined names
+  // Map sortable columns; pathogen_name uses first pathogen names (aggregated)
   const sortColumnMap: Record<string, string> = {
     created_at: 'tr.created_at',
     date_of_birth: 'tr.date_of_birth',
     city: 'c.name',
     test_type_name: 'tt.name',
-    pathogen_name: 'p.name',
+    pathogen_name: `(SELECT string_agg(p2.name, ', ' ORDER BY p2.name) FROM test_result_pathogens trp JOIN pathogens p2 ON p2.id = trp.pathogen_id WHERE trp.test_result_id = tr.id)`,
     patient_identifier: 'pat.identifier',
   };
 
@@ -210,8 +226,8 @@ export const findDoctorTestResults = async (
     dateOfBirth: row.date_of_birth,
     testDate: row.test_date,
     symptoms: row.symptoms || [],
-    pathogenId: row.pathogen_id || null,
-    pathogenName: row.pathogen_name || null,
+    pathogenIds: row.pathogen_ids || [],
+    pathogenNames: row.pathogen_names || [],
     otherInformations: row.other_informations,
     sari: row.sari,
     atb: row.atb,
@@ -251,12 +267,11 @@ export const findDoctorTestResultsByInterval = async (
     SELECT
       tr.*,
       tt.name as test_type_name,
-      p.name as pathogen_name,
       pat.identifier as patient_identifier,
       c.name as city_name,
+      ${PATHOGEN_IDS_SUB} AS pathogen_ids, ${PATHOGEN_NAMES_SUB} AS pathogen_names
     FROM test_results tr
     LEFT JOIN test_types tt ON tr.test_type_id = tt.id
-    LEFT JOIN pathogens p ON tr.pathogen_id = p.id
     LEFT JOIN patients pat ON tr.patient_id = pat.id
     LEFT JOIN cities c ON tr.city_id = c.id
     WHERE tr.created_by = $1
@@ -296,8 +311,8 @@ export const findDoctorTestResultsByInterval = async (
     dateOfBirth: row.date_of_birth,
     testDate: row.test_date,
     symptoms: row.symptoms || [],
-    pathogenId: row.pathogen_id || null,
-    pathogenName: row.pathogen_name || null,
+    pathogenIds: row.pathogen_ids || [],
+    pathogenNames: row.pathogen_names || [],
     otherInformations: row.other_informations,
     sari: row.sari,
     atb: row.atb,
@@ -331,12 +346,11 @@ export const findDoctorTestResultsByPatient = async (
     SELECT
       tr.*,
       tt.name as test_type_name,
-      p.name as pathogen_name,
       pat.identifier as patient_identifier,
       c.name as city_name,
+      ${PATHOGEN_IDS_SUB} AS pathogen_ids, ${PATHOGEN_NAMES_SUB} AS pathogen_names
     FROM test_results tr
     LEFT JOIN test_types tt ON tr.test_type_id = tt.id
-    LEFT JOIN pathogens p ON tr.pathogen_id = p.id
     LEFT JOIN patients pat ON tr.patient_id = pat.id
     LEFT JOIN cities c ON tr.city_id = c.id
     WHERE tr.created_by = $1
@@ -356,8 +370,8 @@ export const findDoctorTestResultsByPatient = async (
     dateOfBirth: row.date_of_birth,
     testDate: row.test_date,
     symptoms: row.symptoms || [],
-    pathogenId: row.pathogen_id || null,
-    pathogenName: row.pathogen_name || null,
+    pathogenIds: row.pathogen_ids || [],
+    pathogenNames: row.pathogen_names || [],
     otherInformations: row.other_informations,
     sari: row.sari,
     atb: row.atb,
@@ -376,8 +390,35 @@ export const findDoctorTestResultsByPatient = async (
 };
 
 /**
+ * Create test_result_pathogens rows for a test result
+ */
+export const createTestResultPathogens = async (
+  testResultId: string,
+  pathogenIds: string[],
+): Promise<void> => {
+  if (pathogenIds.length === 0) return;
+  const pool = getDatabasePool();
+  for (const pid of pathogenIds) {
+    await pool.query(
+      `INSERT INTO test_result_pathogens (test_result_id, pathogen_id) VALUES ($1, $2)
+       ON CONFLICT (test_result_id, pathogen_id) DO NOTHING`,
+      [testResultId, pid],
+    );
+  }
+};
+
+/**
+ * Delete all pathogens for a test result
+ */
+export const deleteTestResultPathogensByTestResultId = async (testResultId: string): Promise<boolean> => {
+  const pool = getDatabasePool();
+  const result = await pool.query('DELETE FROM test_result_pathogens WHERE test_result_id = $1', [testResultId]);
+  return result.rowCount !== null && result.rowCount > 0;
+};
+
+/**
  * Create a new test result
- * @param data - Test result data
+ * @param data - Test result data (pathogenIds in test_result_pathogens, not test_results)
  * @param createdBy - User ID of the creator
  * @returns Created test result entity
  */
@@ -389,7 +430,7 @@ export const createTestResult = async (
     dateOfBirth: Date;
     testDate: Date;
     symptoms: string[];
-    pathogenId?: string | null;
+    pathogenIds?: string[];
     otherInformations?: string | null;
     sari?: boolean | null;
     atb?: boolean | null;
@@ -406,10 +447,10 @@ export const createTestResult = async (
   const pool = getDatabasePool();
   const result = await pool.query(
     `INSERT INTO test_results (
-      city_id, icp_number, test_type_id, date_of_birth, test_date, symptoms, pathogen_id,
+      city_id, icp_number, test_type_id, date_of_birth, test_date, symptoms,
       other_informations, sari, atb, antivirals, obesity,
       respiratory_support, ecmo, pregnancy, trimester, patient_id, created_by
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
     RETURNING *`,
     [
       data.cityId,
@@ -418,7 +459,6 @@ export const createTestResult = async (
       data.dateOfBirth,
       data.testDate,
       data.symptoms,
-      data.pathogenId || null,
       data.otherInformations || null,
       data.sari ?? null,
       data.atb ?? null,
@@ -437,7 +477,11 @@ export const createTestResult = async (
     throw new InternalServerError('Failed to create test result');
   }
 
-  return mapTestResultRow(result.rows[0]);
+  const entity = mapTestResultRow(result.rows[0]);
+  if (data.pathogenIds && data.pathogenIds.length > 0) {
+    await createTestResultPathogens(entity.id, data.pathogenIds);
+  }
+  return entity;
 };
 
 /**
@@ -454,7 +498,6 @@ export const updateTestResult = async (
     dateOfBirth?: Date;
     testDate?: Date;
     symptoms?: string[];
-    pathogenId?: string | null;
     otherInformations?: string | null;
     sari?: boolean | null;
     atb?: boolean | null;
@@ -498,12 +541,6 @@ export const updateTestResult = async (
   if (data.symptoms !== undefined) {
     updateFields.push(`symptoms = $${paramIndex}`);
     values.push(data.symptoms);
-    paramIndex++;
-  }
-
-  if (data.pathogenId !== undefined) {
-    updateFields.push(`pathogen_id = $${paramIndex}`);
-    values.push(data.pathogenId);
     paramIndex++;
   }
 
@@ -626,11 +663,10 @@ export const deleteTestResultsByUserId = async (userId: string, client?: any): P
 export const findTestResultsByPatient = async (patientId: string): Promise<TestResultEntity[]> => {
   const pool = getDatabasePool();
   const result = await pool.query(
-    `    SELECT tr.*, tt.name as test_type_name, p.name as pathogen_name, pat.identifier as patient_identifier,
-           c.name as city_name
+    `SELECT tr.*, tt.name as test_type_name, pat.identifier as patient_identifier, c.name as city_name,
+            ${PATHOGEN_IDS_SUB} AS pathogen_ids, ${PATHOGEN_NAMES_SUB} AS pathogen_names
      FROM test_results tr
      LEFT JOIN test_types tt ON tr.test_type_id = tt.id
-     LEFT JOIN pathogens p ON tr.pathogen_id = p.id
      LEFT JOIN patients pat ON tr.patient_id = pat.id
      LEFT JOIN cities c ON tr.city_id = c.id
      WHERE tr.patient_id = $1
@@ -638,7 +674,11 @@ export const findTestResultsByPatient = async (patientId: string): Promise<TestR
     [patientId],
   );
 
-  return result.rows.map(mapTestResultRow);
+  return result.rows.map((row) => ({
+    ...mapTestResultRow(row),
+    pathogenIds: row.pathogen_ids || [],
+    pathogenNames: row.pathogen_names || [],
+  }));
 };
 
 /**
@@ -661,15 +701,14 @@ export const findAdminTestResults = async (options: {
     SELECT
       tr.*,
       tt.name as test_type_name,
-      p.name as pathogen_name,
       pat.identifier as patient_identifier,
       u.icp_number as doctor_icp_number,
       u.email as doctor_email,
       c.name as city_name,
+      ${PATHOGEN_IDS_SUB} AS pathogen_ids, ${PATHOGEN_NAMES_SUB} AS pathogen_names,
       COUNT(*) OVER() AS full_count
     FROM test_results tr
     LEFT JOIN test_types tt ON tr.test_type_id = tt.id
-    LEFT JOIN pathogens p ON tr.pathogen_id = p.id
     LEFT JOIN patients pat ON tr.patient_id = pat.id
     LEFT JOIN users u ON tr.created_by = u.id
     LEFT JOIN cities c ON tr.city_id = c.id
@@ -719,8 +758,8 @@ export const findAdminTestResults = async (options: {
     dateOfBirth: row.date_of_birth,
     testDate: row.test_date,
     symptoms: row.symptoms || [],
-    pathogenId: row.pathogen_id || null,
-    pathogenName: row.pathogen_name || null,
+    pathogenIds: row.pathogen_ids || [],
+    pathogenNames: row.pathogen_names || [],
     otherInformations: row.other_informations,
     sari: row.sari,
     atb: row.atb,
@@ -758,14 +797,13 @@ export const findAdminTestResultsForExport = async (options: {
     SELECT
       tr.*,
       tt.name as test_type_name,
-      p.name as pathogen_name,
       pat.identifier as patient_identifier,
       u.icp_number as doctor_icp_number,
       u.email as doctor_email,
-      c.name as city_name
+      c.name as city_name,
+      ${PATHOGEN_IDS_SUB} AS pathogen_ids, ${PATHOGEN_NAMES_SUB} AS pathogen_names
     FROM test_results tr
     LEFT JOIN test_types tt ON tr.test_type_id = tt.id
-    LEFT JOIN pathogens p ON tr.pathogen_id = p.id
     LEFT JOIN patients pat ON tr.patient_id = pat.id
     LEFT JOIN users u ON tr.created_by = u.id
     LEFT JOIN cities c ON tr.city_id = c.id
@@ -805,14 +843,15 @@ export const findAdminTestResultsForExport = async (options: {
   return result.rows.map((row) => ({
     id: row.id,
     cityId: row.city_id,
+    cityName: row.city_name || null,
     icpNumber: row.icp_number,
     testTypeId: row.test_type_id,
     testTypeName: row.test_type_name,
     dateOfBirth: row.date_of_birth,
     testDate: row.test_date,
     symptoms: row.symptoms || [],
-    pathogenId: row.pathogen_id || null,
-    pathogenName: row.pathogen_name || null,
+    pathogenIds: row.pathogen_ids || [],
+    pathogenNames: row.pathogen_names || [],
     otherInformations: row.other_informations,
     sari: row.sari,
     atb: row.atb,

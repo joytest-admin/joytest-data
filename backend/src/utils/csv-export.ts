@@ -67,7 +67,7 @@ export function generateTestResultsCsv(results: TestResultResponse[]): string {
       escapeCsvField(result.testTypeName || ''),
       escapeCsvField(yearOfBirth),
       escapeCsvField(symptoms),
-      escapeCsvField(result.pathogenName || ''),
+      escapeCsvField((result.pathogenNames || []).join('; ') || ''),
       escapeCsvField(result.patientIdentifier || ''),
       escapeCsvField(result.otherInformations || ''),
       escapeCsvField(result.sari ? 'Ano' : 'Ne'),

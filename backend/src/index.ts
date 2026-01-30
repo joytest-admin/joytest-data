@@ -19,6 +19,7 @@ import patientRoutes from './routes/patient.routes';
 import feedbackRoutes from './routes/feedback.routes';
 import exportRoutes from './routes/export.routes';
 import geographyRoutes from './routes/geography.routes';
+import notificationRoutes from './routes/notification.routes';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
 import { closeDatabasePool } from './utils/database';
 
@@ -58,6 +59,7 @@ app.use('/api/patients', patientRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/exports', exportRoutes);
 app.use('/api/geography', geographyRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // 404 handler (must be after all routes)
 app.use(notFoundHandler);

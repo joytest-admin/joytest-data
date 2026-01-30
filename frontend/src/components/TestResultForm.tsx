@@ -161,7 +161,7 @@ export default function TestResultForm({
   // Form state
   const [linkToken, setLinkToken] = useState(initialLinkToken);
   const [testTypeId, setTestTypeId] = useState(getInitialTestTypeId());
-  const [result, setResult] = useState(initialData?.pathogenId ? 'positive' : (initialData ? 'negative' : ''));
+  const [result, setResult] = useState((initialData?.pathogenIds && initialData.pathogenIds.length > 0) ? 'positive' : (initialData ? 'negative' : ''));
   const [yearOfBirth, setYearOfBirth] = useState(getInitialYearOfBirth());
   const [citySearchQuery, setCitySearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState<CityResponse | null>(null);
@@ -192,7 +192,7 @@ export default function TestResultForm({
     }
     return [];
   });
-  const [pathogenId, setPathogenId] = useState(initialData?.pathogenId || '');
+  const [pathogenIds, setPathogenIds] = useState<string[]>(initialData?.pathogenIds || []);
   const [pathogens, setPathogens] = useState<Pathogen[]>([]);
   const [availablePathogens, setAvailablePathogens] = useState<Pathogen[]>([]);
   const [patientId, setPatientId] = useState<string | null>(initialData?.patientId || null);
@@ -208,15 +208,14 @@ export default function TestResultForm({
   const cityInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  // Load initial city from profile, initialData, or localStorage
+  // Load initial city from localStorage, initialData, or profileCityId
   useEffect(() => {
     const loadInitialCity = async () => {
-      // Priority: initialData > profileCityId > localStorage (for new forms only)
-      const cityIdToLoad = initialData?.cityId || profileCityId;
-      if (cityIdToLoad) {
+      // Edit mode: always use initialData.cityId (highest priority)
+      if (initialData?.cityId) {
         setLoadingInitialCity(true);
         try {
-          const city = await getCityById(cityIdToLoad);
+          const city = await getCityById(initialData.cityId);
           if (city) {
             setSelectedCity(city);
             setCitySearchQuery(city.name);
@@ -226,20 +225,46 @@ export default function TestResultForm({
         } finally {
           setLoadingInitialCity(false);
         }
-      } else if (!initialData && !profileCityId) {
-        // New form with no profile city: try to load from localStorage
-        setLoadingInitialCity(true);
-        try {
-          const lastCity = await getLastCityFromStorage();
-          if (lastCity) {
-            setSelectedCity(lastCity);
-            setCitySearchQuery(lastCity.name);
-          }
-        } catch (err) {
-          console.error('Failed to load last city from localStorage:', err);
-        } finally {
+        return; // Edit mode: done
+      }
+
+      // New form: prioritize localStorage, then profileCityId
+      setLoadingInitialCity(true);
+      try {
+        // First: try localStorage (last used city on this computer)
+        const lastCity = await getLastCityFromStorage();
+        if (lastCity) {
+          setSelectedCity(lastCity);
+          setCitySearchQuery(lastCity.name);
           setLoadingInitialCity(false);
+          return; // Success: localStorage city loaded
         }
+
+        // Fallback: use profileCityId if available
+        if (profileCityId) {
+          const city = await getCityById(profileCityId);
+          if (city) {
+            setSelectedCity(city);
+            setCitySearchQuery(city.name);
+          }
+        }
+        // If no localStorage and no profileCityId, leave empty (no action needed)
+      } catch (err) {
+        console.error('Failed to load initial city:', err);
+        // If localStorage city failed, try profileCityId as fallback
+        if (profileCityId) {
+          try {
+            const city = await getCityById(profileCityId);
+            if (city) {
+              setSelectedCity(city);
+              setCitySearchQuery(city.name);
+            }
+          } catch (profileErr) {
+            console.error('Failed to load profile city:', profileErr);
+          }
+        }
+      } finally {
+        setLoadingInitialCity(false);
       }
     };
     loadInitialCity();
@@ -347,7 +372,7 @@ export default function TestResultForm({
     loadPatient();
   }, [isEditMode, initialData?.patientId, initialData?.patientIdentifier, linkToken, selectedPatient]);
 
-  // Filter pathogens based on selected test type
+  // Filter pathogens based on selected test type; prune pathogenIds when available set changes
   useEffect(() => {
     if (testTypeId && initialTestTypes.length > 0) {
       const selectedTestType = initialTestTypes.find((tt) => tt.id === testTypeId);
@@ -356,30 +381,26 @@ export default function TestResultForm({
           selectedTestType.pathogenIds!.includes(p.id),
         );
         setAvailablePathogens(filtered);
-        // Only reset pathogen selection if pathogens are loaded and current selection is not available
-        // Don't reset if pathogens are still loading (empty array) - this prevents race condition in edit mode
-        if (pathogens.length > 0 && pathogenId && !filtered.find((p) => p.id === pathogenId)) {
-          setPathogenId('');
+        // Keep only selected pathogen IDs that are still in the available set
+        if (pathogens.length > 0 && pathogenIds.length > 0) {
+          const validIds = pathogenIds.filter((id) => filtered.some((p) => p.id === id));
+          if (validIds.length !== pathogenIds.length) {
+            setPathogenIds(validIds);
+          }
         }
-        // If pathogens are loaded and we have a pathogenId, ensure it's still valid
-        // This handles the case where pathogens load after initial mount
       } else {
         setAvailablePathogens([]);
-        // Only reset if pathogens are loaded (not still loading) and we have a pathogenId
-        // This prevents clearing pathogenId before pathogens are loaded in edit mode
-        if (pathogens.length > 0 && pathogenId) {
-          setPathogenId('');
+        if (pathogens.length > 0 && pathogenIds.length > 0) {
+          setPathogenIds([]);
         }
       }
     } else {
       setAvailablePathogens([]);
-      // Only reset if pathogens are loaded (not still loading) and we have a pathogenId
-      // This prevents clearing pathogenId before pathogens are loaded in edit mode
-      if (pathogens.length > 0 && pathogenId) {
-        setPathogenId('');
+      if (pathogens.length > 0 && pathogenIds.length > 0) {
+        setPathogenIds([]);
       }
     }
-  }, [testTypeId, initialTestTypes, pathogens, pathogenId]);
+  }, [testTypeId, initialTestTypes, pathogens, pathogenIds]);
 
   // Try to identify user by unique link token on mount
   // Note: Server-side validation on main page should catch invalid tokens,
@@ -468,8 +489,8 @@ export default function TestResultForm({
       return;
     }
 
-    // If result is positive, pathogen is required
-    if (result === 'positive' && !pathogenId) {
+    // If result is positive, at least one pathogen is required
+    if (result === 'positive' && (!pathogenIds || pathogenIds.length === 0)) {
       setError(t.form.pathogenRequiredError);
       setLoading(false);
       return;
@@ -506,14 +527,14 @@ export default function TestResultForm({
 
       if (isEditMode && testResultId) {
         // Update mode
-        // Include pathogenId: if result is positive, use the selected pathogenId (already validated), otherwise null to clear it
+        // Include pathogenIds: if result is positive use selected IDs (validated); if negative use [] to clear
         const updateRequest: UpdateTestResultRequest = {
           cityId: selectedCity.id,
           testTypeId,
           dateOfBirth,
           testDate: new Date(testDate).toISOString(), // Convert test date to ISO string
           symptoms: symptoms.length > 0 ? symptoms : undefined, // Only include if not empty
-          pathogenId: result === 'positive' ? pathogenId : undefined,
+          pathogenIds: result === 'positive' ? pathogenIds : [],
           patientId: patientId || undefined,
           otherInformations: otherInformations.trim() || undefined,
           sari: sari || undefined,
@@ -541,7 +562,7 @@ export default function TestResultForm({
           dateOfBirth,
           testDate: new Date(testDate).toISOString(), // Convert test date to ISO string
           symptoms: symptoms.length > 0 ? symptoms : undefined, // Only include if not empty
-          pathogenId: result === 'positive' ? pathogenId : undefined,
+          pathogenIds: result === 'positive' ? pathogenIds : undefined,
           patientId: patientId || undefined, // Include patient ID if selected
           token: linkToken || undefined, // Include unique link token if present (for passwordless auth)
           otherInformations: otherInformations.trim() || undefined,
@@ -649,7 +670,7 @@ export default function TestResultForm({
           setPregnancy(false);
           setTrimester(null);
           setVaccinations([]);
-          setPathogenId('');
+          setPathogenIds([]);
           setPatientId(null);
           setSelectedPatient(null);
         }
@@ -816,10 +837,10 @@ export default function TestResultForm({
           </div>
         </div>
 
-        {/* Pathogen selection (only if result is positive) - right after Result */}
+        {/* Pathogen multi-select (only if result is positive) - right after Result */}
         {result === 'positive' && (
           <div>
-            <label htmlFor="pathogen" className="block text-sm sm:text-base font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1.5">
               {t.form.pathogenRequired} ({t.form.resultPositive})
             </label>
             <p className="mt-1 text-xs sm:text-sm text-gray-500 mb-2">
@@ -834,20 +855,28 @@ export default function TestResultForm({
                 {t.form.pathogenNoneAvailable}
               </p>
             ) : (
-              <select
-                id="pathogen"
-                required={result === 'positive'}
-                value={pathogenId}
-                onChange={(e) => setPathogenId(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 sm:px-4 py-3 sm:py-2.5 text-base sm:text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
-              >
-                <option value="">-- {t.form.pathogen} --</option>
+              <div className="mt-1 rounded-md border border-gray-300 bg-white p-3 space-y-2 max-h-48 overflow-y-auto">
                 {availablePathogens.map((pathogen) => (
-                  <option key={pathogen.id} value={pathogen.id}>
-                    {pathogen.name}
-                  </option>
+                  <label
+                    key={pathogen.id}
+                    className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded-md"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={pathogenIds.includes(pathogen.id)}
+                      onChange={() => {
+                        setPathogenIds((prev) =>
+                          prev.includes(pathogen.id)
+                            ? prev.filter((id) => id !== pathogen.id)
+                            : [...prev, pathogen.id],
+                        );
+                      }}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-900">{pathogen.name}</span>
+                  </label>
                 ))}
-              </select>
+              </div>
             )}
           </div>
         )}

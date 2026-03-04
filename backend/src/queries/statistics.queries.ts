@@ -328,9 +328,13 @@ export const getPositivePathogensByAgeGroupsCounts = async (
   // Add country filter based on region ID ranges when requested
   if (country) {
     if (country === 'CZ') {
-      filterConditions += ` AND r.id <= ${CZECH_REGION_MAX_ID}`;
+      filterConditions += ` AND r.id <= $${paramIndex}`;
+      params.push(CZECH_REGION_MAX_ID);
+      paramIndex++;
     } else if (country === 'SK') {
-      filterConditions += ` AND r.id > ${CZECH_REGION_MAX_ID}`;
+      filterConditions += ` AND r.id > $${paramIndex}`;
+      params.push(CZECH_REGION_MAX_ID);
+      paramIndex++;
     }
   }
 
@@ -478,9 +482,15 @@ export const getPositiveTrendsByPathogensCounts = async (
   // Add country filter using region ID ranges when requested
   if (country) {
     if (country === 'CZ') {
-      filterConditions += ` AND r.id <= ${CZECH_REGION_MAX_ID}`;
+      filterConditions += ` AND r.id <= $${paramIndex}`;
+      params.push(CZECH_REGION_MAX_ID);
+      filterParams.push(CZECH_REGION_MAX_ID.toString());
+      paramIndex++;
     } else if (country === 'SK') {
-      filterConditions += ` AND r.id > ${CZECH_REGION_MAX_ID}`;
+      filterConditions += ` AND r.id > $${paramIndex}`;
+      params.push(CZECH_REGION_MAX_ID);
+      filterParams.push(CZECH_REGION_MAX_ID.toString());
+      paramIndex++;
     }
   }
 
@@ -791,12 +801,9 @@ export const getPositivePathogenDistributionByScope = async (
       : Promise.resolve([]),
     // Country: filter by country when requested, otherwise include all doctors
     country
-      ? getDistributionForScope(
-          country === 'CZ'
-            ? `r.id <= ${CZECH_REGION_MAX_ID}`
-            : `r.id > ${CZECH_REGION_MAX_ID}`,
-          [],
-        )
+      ? country === 'CZ'
+        ? getDistributionForScope('r.id <= $1', [CZECH_REGION_MAX_ID])
+        : getDistributionForScope('r.id > $1', [CZECH_REGION_MAX_ID])
       : getDistributionForScope('1=1', []),
   ]);
 

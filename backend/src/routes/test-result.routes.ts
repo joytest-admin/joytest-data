@@ -559,7 +559,17 @@ router.get(
     const allDoctors = req.query.allDoctors === 'true' || req.query.allDoctors === '1';
     const regionId = req.query.regionId ? parseInt(req.query.regionId as string, 10) : undefined;
     const cityId = req.query.cityId ? parseInt(req.query.cityId as string, 10) : undefined;
-    const country = (req.query.country as string | undefined)?.toUpperCase() as 'CZ' | 'SK' | undefined;
+
+    const rawCountry = (req.query.country as string | undefined)?.toUpperCase();
+    let country: 'CZ' | 'SK' | undefined;
+    if (rawCountry === 'CZ' || rawCountry === 'SK') {
+      country = rawCountry;
+    } else if (rawCountry) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid country parameter. Must be CZ or SK.',
+      });
+    }
 
     // Determine doctorId: null if allDoctors is true, otherwise use current user's ID
     const doctorId = allDoctors ? null : authReq.user.userId;
@@ -647,7 +657,17 @@ router.get(
     const city = req.query.city as string | undefined;
     const regionId = req.query.regionId ? parseInt(req.query.regionId as string, 10) : undefined;
     const cityId = req.query.cityId ? parseInt(req.query.cityId as string, 10) : undefined;
-    const country = (req.query.country as string | undefined)?.toUpperCase() as 'CZ' | 'SK' | undefined;
+
+    const rawCountry = (req.query.country as string | undefined)?.toUpperCase();
+    let country: 'CZ' | 'SK' | undefined;
+    if (rawCountry === 'CZ' || rawCountry === 'SK') {
+      country = rawCountry;
+    } else if (rawCountry) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid country parameter. Must be CZ or SK.',
+      });
+    }
     const startDate = req.query.startDate as string | undefined;
     const endDate = req.query.endDate as string | undefined;
 
@@ -757,7 +777,17 @@ router.get(
     const endDate = req.query.endDate as string | undefined;
     const regionId = req.query.regionId ? parseInt(req.query.regionId as string, 10) : undefined;
     const cityId = req.query.cityId ? parseInt(req.query.cityId as string, 10) : undefined;
-    const country = (req.query.country as string | undefined)?.toUpperCase() as 'CZ' | 'SK' | undefined;
+
+    const rawCountry = (req.query.country as string | undefined)?.toUpperCase();
+    let country: 'CZ' | 'SK' | undefined;
+    if (rawCountry === 'CZ' || rawCountry === 'SK') {
+      country = rawCountry;
+    } else if (rawCountry) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid country parameter. Must be CZ or SK.',
+      });
+    }
 
     const result = await getPositivePathogenDistributionByScopeStatistics(authReq.user.userId, {
       startDate,

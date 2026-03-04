@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
     const allDoctors = searchParams.get('allDoctors') === 'true';
     const regionId = searchParams.get('regionId');
     const cityId = searchParams.get('cityId');
+    const country = searchParams.get('country');
 
     if (!jwtToken && !linkToken) {
       return NextResponse.json(
@@ -50,6 +51,7 @@ export async function GET(request: NextRequest) {
     if (allDoctors) queryParams.append('allDoctors', 'true');
     if (regionId) queryParams.append('regionId', regionId);
     if (cityId) queryParams.append('cityId', cityId);
+    if (country) queryParams.append('country', country);
     if (startDate) queryParams.append('startDate', startDate);
     if (endDate) queryParams.append('endDate', endDate);
     if (period) queryParams.append('period', period);

@@ -86,7 +86,7 @@ export interface Translations {
           month: string;
           allDoctors: string;
           onlyMine: string;
-          allCzechRepublic: string;
+          entireCountry: string;
           entireRegion: string;
           selectRegion: string;
           selectCity: string;
@@ -382,14 +382,15 @@ export const translations: Record<LanguageCode, Translations> = {
           month: 'Měsíce',
           allDoctors: 'Všichni lékaři',
           onlyMine: 'Moje výsledky',
-          allCzechRepublic: 'Celá ČR',
+          // Label for "entire country" is built dynamically based on current country (ČR / Slovensko)
+          entireCountry: 'Celý stát',
           entireRegion: 'Celý kraj',
           selectRegion: 'Vyberte region',
           selectCity: 'Vyberte město',
           region: 'Region',
           city: 'Město',
           pathogenDistribution: 'Podíl pozitivních patogenů',
-          pathogensByAgeGroups: 'Pozitivní patogeny podle věkových skupin (celá ČR)',
+          pathogensByAgeGroups: 'Pozitivní patogeny podle věkových skupin',
           me: 'Já',
           district: 'Okres',
           country: 'Stát',
@@ -674,7 +675,7 @@ export const translations: Record<LanguageCode, Translations> = {
           month: 'Months',
           allDoctors: 'All Doctors',
           onlyMine: 'Only Mine',
-          allCzechRepublic: 'All of Czech Republic',
+          entireCountry: 'Entire country',
           entireRegion: 'Entire Region',
           selectRegion: 'Select Region',
           selectCity: 'Select City',

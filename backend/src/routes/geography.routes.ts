@@ -12,6 +12,7 @@ import {
   getDistrictById,
   getCityById,
 } from '../services/geography.service';
+import type { SupportedCountry } from '../utils/geography-country';
 
 const router = Router();
 
@@ -29,6 +30,13 @@ const router = Router();
  *         schema:
  *           type: string
  *         description: Search term to filter regions by name (case-insensitive partial match)
+ *       - in: query
+ *         name: country
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [CZ, SK]
+ *         description: Optional country filter. If omitted, returns all regions (Czech first, then Slovak).
  *     responses:
  *       200:
  *         description: List of regions
@@ -57,7 +65,19 @@ router.get(
   // Public endpoint - doctors need to access geography data without auth
   async (req: Request, res: Response) => {
     const search = req.query.q as string | undefined;
-    const result = await getAllRegions(search);
+    const countryParam = (req.query.country as string | undefined)?.toUpperCase();
+
+    let country: SupportedCountry | undefined;
+    if (countryParam === 'CZ' || countryParam === 'SK') {
+      country = countryParam;
+    } else if (countryParam) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid country parameter. Must be CZ or SK.',
+      });
+    }
+
+    const result = await getAllRegions(search, country);
     res.json({ success: true, data: result });
   },
 );

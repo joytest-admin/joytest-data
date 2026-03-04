@@ -4,6 +4,7 @@
  */
 
 import { getDatabasePool } from '../utils/database';
+import { CZECH_REGION_MAX_ID, SupportedCountry } from '../utils/geography-country';
 
 /**
  * Get positive and negative test result counts for a specific doctor with filters
@@ -268,12 +269,13 @@ export const getPositivePathogensByAgeGroupsCounts = async (
     city?: string;
     regionId?: number;
     cityId?: number;
+    country?: SupportedCountry;
     startDate?: string;
     endDate?: string;
   } = {},
 ): Promise<Array<{ pathogenName: string; ageGroup: string; count: number }>> => {
   const pool = getDatabasePool();
-  const { search, city, regionId, cityId, startDate, endDate } = options;
+  const { search, city, regionId, cityId, country, startDate, endDate } = options;
 
   const params: any[] = [];
   let paramIndex = 1;
@@ -321,6 +323,15 @@ export const getPositivePathogensByAgeGroupsCounts = async (
     filterConditions += ` AND c.id = $${paramIndex}`;
     params.push(cityId);
     paramIndex++;
+  }
+
+  // Add country filter based on region ID ranges when requested
+  if (country) {
+    if (country === 'CZ') {
+      filterConditions += ` AND r.id <= ${CZECH_REGION_MAX_ID}`;
+    } else if (country === 'SK') {
+      filterConditions += ` AND r.id > ${CZECH_REGION_MAX_ID}`;
+    }
   }
 
   if (startDate) {
@@ -391,6 +402,7 @@ export const getPositiveTrendsByPathogensCounts = async (
     city?: string;
     regionId?: number;
     cityId?: number;
+    country?: SupportedCountry;
     startDate?: string;
     endDate?: string;
     period?: 'day' | 'week' | 'month';
@@ -400,7 +412,7 @@ export const getPositiveTrendsByPathogensCounts = async (
   total: Array<{ date: string; count: number }>;
 }> => {
   const pool = getDatabasePool();
-  const { search, city, regionId, cityId, startDate, endDate, period = 'day' } = options;
+  const { search, city, regionId, cityId, country, startDate, endDate, period = 'day' } = options;
 
   // Determine the date truncation function based on period
   const dateTrunc = period === 'week' ? 'week' : period === 'month' ? 'month' : 'day';
@@ -461,6 +473,15 @@ export const getPositiveTrendsByPathogensCounts = async (
     params.push(cityId);
     filterParams.push(cityId.toString());
     paramIndex++;
+  }
+
+  // Add country filter using region ID ranges when requested
+  if (country) {
+    if (country === 'CZ') {
+      filterConditions += ` AND r.id <= ${CZECH_REGION_MAX_ID}`;
+    } else if (country === 'SK') {
+      filterConditions += ` AND r.id > ${CZECH_REGION_MAX_ID}`;
+    }
   }
 
   if (startDate) {
@@ -615,6 +636,7 @@ export const getPositivePathogenDistributionByScope = async (
     endDate?: string;
     regionId?: number;
     cityId?: number;
+    country?: SupportedCountry;
   } = {},
 ): Promise<{
   me: Array<{ pathogenName: string; count: number; percentage: number }>;
@@ -623,7 +645,7 @@ export const getPositivePathogenDistributionByScope = async (
   country: Array<{ pathogenName: string; count: number; percentage: number }>;
 }> => {
   const pool = getDatabasePool();
-  const { startDate, endDate, regionId, cityId } = options;
+  const { startDate, endDate, regionId, cityId, country } = options;
 
   // First, get the doctor's location (district and region)
   const doctorQuery = `
@@ -675,7 +697,7 @@ export const getPositivePathogenDistributionByScope = async (
   //   - If regionId provided (but no city): aggregate all districts in that region
   //   - Otherwise: use doctor's district
   // - Region: use city's region if cityId provided, else use filterRegionId (provided or doctor's)
-  // - Country: always all doctors (no filters)
+  // - Country: all doctors within the requested country (if provided), otherwise all doctors
   let districtWhereClause: string;
   let districtParams: any[];
 
@@ -756,7 +778,7 @@ export const getPositivePathogenDistributionByScope = async (
   };
 
   // Get distributions for each scope
-  const [me, district, region, country] = await Promise.all([
+  const [me, district, region, countryScope] = await Promise.all([
     // Me: always current doctor only
     getDistributionForScope('tr.created_by = $1', [doctorId]),
     // District: use determined filter
@@ -767,15 +789,22 @@ export const getPositivePathogenDistributionByScope = async (
     regionFilterId
       ? getDistributionForScope('r.id = $1', [regionFilterId])
       : Promise.resolve([]),
-    // Country: always all doctors (no filters applied)
-    getDistributionForScope('1=1', []),
+    // Country: filter by country when requested, otherwise include all doctors
+    country
+      ? getDistributionForScope(
+          country === 'CZ'
+            ? `r.id <= ${CZECH_REGION_MAX_ID}`
+            : `r.id > ${CZECH_REGION_MAX_ID}`,
+          [],
+        )
+      : getDistributionForScope('1=1', []),
   ]);
 
   return {
     me,
     district,
     region,
-    country,
+    country: countryScope,
   };
 };
 

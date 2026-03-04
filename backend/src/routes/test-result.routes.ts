@@ -491,6 +491,12 @@ router.get(
  *         description: Filter by region ID (optional)
  *       - in: query
  *         name: cityId
+ *       - in: query
+ *         name: country
+ *         schema:
+ *           type: string
+ *           enum: [CZ, SK]
+ *         description: Optional country filter for region/district/country scopes
  *         schema:
  *           type: integer
  *         description: Filter by city ID (optional)
@@ -553,6 +559,7 @@ router.get(
     const allDoctors = req.query.allDoctors === 'true' || req.query.allDoctors === '1';
     const regionId = req.query.regionId ? parseInt(req.query.regionId as string, 10) : undefined;
     const cityId = req.query.cityId ? parseInt(req.query.cityId as string, 10) : undefined;
+    const country = (req.query.country as string | undefined)?.toUpperCase() as 'CZ' | 'SK' | undefined;
 
     // Determine doctorId: null if allDoctors is true, otherwise use current user's ID
     const doctorId = allDoctors ? null : authReq.user.userId;
@@ -562,6 +569,7 @@ router.get(
       city,
       regionId,
       cityId,
+      country,
       startDate,
       endDate,
       period,
@@ -597,6 +605,12 @@ router.get(
  *         description: Filter by region ID
  *       - in: query
  *         name: cityId
+ *       - in: query
+ *         name: country
+ *         schema:
+ *           type: string
+ *           enum: [CZ, SK]
+ *         description: Optional country filter based on region ID ranges
  *         schema:
  *           type: integer
  *         description: Filter by city ID
@@ -633,6 +647,7 @@ router.get(
     const city = req.query.city as string | undefined;
     const regionId = req.query.regionId ? parseInt(req.query.regionId as string, 10) : undefined;
     const cityId = req.query.cityId ? parseInt(req.query.cityId as string, 10) : undefined;
+    const country = (req.query.country as string | undefined)?.toUpperCase() as 'CZ' | 'SK' | undefined;
     const startDate = req.query.startDate as string | undefined;
     const endDate = req.query.endDate as string | undefined;
 
@@ -642,6 +657,7 @@ router.get(
       city,
       regionId,
       cityId,
+      country,
       startDate,
       endDate,
     });
@@ -667,6 +683,22 @@ router.get(
  *         description: Start date (ISO 8601 format)
  *       - in: query
  *         name: endDate
+ *       - in: query
+ *         name: regionId
+ *         schema:
+ *           type: integer
+ *         description: Optional region ID for region scope override
+ *       - in: query
+ *         name: cityId
+ *         schema:
+ *           type: integer
+ *         description: Optional city ID for city/district/region override
+ *       - in: query
+ *         name: country
+ *         schema:
+ *           type: string
+ *           enum: [CZ, SK]
+ *         description: Optional country filter for the country scope (CZ-only, SK-only)
  *         schema:
  *           type: string
  *           format: date-time
@@ -725,12 +757,14 @@ router.get(
     const endDate = req.query.endDate as string | undefined;
     const regionId = req.query.regionId ? parseInt(req.query.regionId as string, 10) : undefined;
     const cityId = req.query.cityId ? parseInt(req.query.cityId as string, 10) : undefined;
+    const country = (req.query.country as string | undefined)?.toUpperCase() as 'CZ' | 'SK' | undefined;
 
     const result = await getPositivePathogenDistributionByScopeStatistics(authReq.user.userId, {
       startDate,
       endDate,
       regionId,
       cityId,
+      country,
     });
 
     res.json({ success: true, data: result });

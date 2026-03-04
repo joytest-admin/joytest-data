@@ -5,7 +5,17 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('q') || undefined;
-    const url = search ? `/api/geography/regions?q=${encodeURIComponent(search)}` : '/api/geography/regions';
+    const country = searchParams.get('country') || undefined;
+
+    const params = new URLSearchParams();
+    if (search) {
+      params.append('q', search);
+    }
+    if (country) {
+      params.append('country', country);
+    }
+    const query = params.toString();
+    const url = query ? `/api/geography/regions?${query}` : '/api/geography/regions';
     const result = await backendGet(url);
     return NextResponse.json(result);
   } catch (error: any) {

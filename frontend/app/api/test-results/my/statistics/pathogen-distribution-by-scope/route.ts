@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('endDate');
     const regionId = searchParams.get('regionId');
     const cityId = searchParams.get('cityId');
+    const country = searchParams.get('country');
 
     if (!jwtToken && !linkToken) {
       return NextResponse.json(
@@ -45,6 +46,7 @@ export async function GET(request: NextRequest) {
     if (endDate) queryParams.append('endDate', endDate);
     if (regionId) queryParams.append('regionId', regionId);
     if (cityId) queryParams.append('cityId', cityId);
+    if (country) queryParams.append('country', country);
     // Pass token in query string as fallback (middleware checks both header and query param)
     if (linkToken) queryParams.append('token', linkToken);
 

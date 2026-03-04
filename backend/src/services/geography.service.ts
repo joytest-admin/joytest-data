@@ -16,15 +16,48 @@ import {
   findDistrictById,
   findCityById,
 } from '../queries/geography.queries';
+import {
+  compareRegionsCzFirst,
+  isCzechRegionId,
+  isSlovakRegionId,
+  SupportedCountry,
+} from '../utils/geography-country';
 
 /**
- * Get all regions
+ * Get all regions.
+ *
+ * When country is provided, results are filtered to that country
+ * using deterministic ID ranges. Regardless of country, regions are
+ * always ordered with Czech regions first and Slovak regions after.
+ *
  * @param search - Optional search term to filter by name
+ * @param country - Optional country filter ('CZ' | 'SK')
  * @returns Array of region responses
  */
-export const getAllRegions = async (search?: string): Promise<RegionResponse[]> => {
+export const getAllRegions = async (
+  search?: string,
+  country?: SupportedCountry,
+): Promise<RegionResponse[]> => {
   const regions = await findAllRegions(search);
-  return regions.map((region) => ({
+
+  // Filter by country when explicitly requested
+  const filtered = regions.filter((region) => {
+    if (!country) {
+      return true;
+    }
+    if (country === 'CZ') {
+      return isCzechRegionId(region.id);
+    }
+    if (country === 'SK') {
+      return isSlovakRegionId(region.id);
+    }
+    return true;
+  });
+
+  // Ensure stable ordering: CZ first, then SK, then anything else
+  const sorted = [...filtered].sort(compareRegionsCzFirst);
+
+  return sorted.map((region) => ({
     id: region.id,
     name: region.name,
     createdAt: region.createdAt,

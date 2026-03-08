@@ -21,6 +21,7 @@ interface PositiveTrendsChartProps {
   cityId: number | null;
   onCityChange: (cityId: number | null) => void;
   loading?: boolean;
+  country?: 'CZ' | 'SK';
 }
 
 interface Region {
@@ -54,6 +55,7 @@ export default function PositiveTrendsChart({
   cityId,
   onCityChange,
   loading,
+  country = 'CZ',
 }: PositiveTrendsChartProps) {
   const { t } = useTranslation();
   const [regions, setRegions] = useState<Region[]>([]);
@@ -61,12 +63,13 @@ export default function PositiveTrendsChart({
   const [regionsLoading, setRegionsLoading] = useState(false);
   const [citiesLoading, setCitiesLoading] = useState(false);
 
-  // Fetch regions on mount
+  // Fetch regions whenever country changes so that Czech and Slovak
+  // regions are clearly separated and ordered.
   useEffect(() => {
     const fetchRegions = async () => {
       setRegionsLoading(true);
       try {
-        const data = await getRegions();
+        const data = await getRegions(undefined, country);
         setRegions(data);
       } catch (error) {
         console.error('Error fetching regions:', error);
@@ -75,7 +78,7 @@ export default function PositiveTrendsChart({
       }
     };
     fetchRegions();
-  }, []);
+  }, [country]);
 
   // Fetch cities when region is selected
   useEffect(() => {
@@ -255,7 +258,7 @@ export default function PositiveTrendsChart({
                 style={{ color: '#000000' }}
                 disabled={regionsLoading}
               >
-                <option value="">{t.pages.testResults.charts.allCzechRepublic}</option>
+                <option value="">{t.pages.testResults.charts.entireCountry}</option>
                 {regions.map((region) => (
                   <option key={region.id} value={region.id}>
                     {region.name}
@@ -273,7 +276,7 @@ export default function PositiveTrendsChart({
                 style={{ color: '#000000' }}
                 disabled={citiesLoading || regionId === null}
               >
-                <option value="">{t.pages.testResults.charts.allCzechRepublic}</option>
+                <option value="">{t.pages.testResults.charts.entireCountry}</option>
                 {cities.map((city) => (
                   <option key={city.id} value={city.id}>
                     {city.name}
@@ -357,7 +360,7 @@ export default function PositiveTrendsChart({
                 style={{ color: '#000000' }}
                 disabled={regionsLoading}
               >
-                <option value="">{t.pages.testResults.charts.allCzechRepublic}</option>
+                <option value="">{t.pages.testResults.charts.entireCountry}</option>
                 {regions.map((region) => (
                   <option key={region.id} value={region.id}>
                     {region.name}
@@ -375,7 +378,7 @@ export default function PositiveTrendsChart({
                 style={{ color: '#000000' }}
                 disabled={citiesLoading || regionId === null}
               >
-                <option value="">{t.pages.testResults.charts.allCzechRepublic}</option>
+                <option value="">{t.pages.testResults.charts.entireCountry}</option>
                 {cities.map((city) => (
                   <option key={city.id} value={city.id}>
                     {city.name}
@@ -457,8 +460,8 @@ export default function PositiveTrendsChart({
               className="px-3 py-1 text-sm border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               style={{ color: '#000000' }}
               disabled={regionsLoading}
-            >
-              <option value="">{t.pages.testResults.charts.allCzechRepublic}</option>
+              >
+              <option value="">{t.pages.testResults.charts.entireCountry}</option>
               {regions.map((region) => (
                 <option key={region.id} value={region.id}>
                   {region.name}
@@ -468,15 +471,15 @@ export default function PositiveTrendsChart({
           </div>
 
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">{t.pages.testResults.charts.city}:</label>
+              <label className="text-sm font-medium text-gray-700">{t.pages.testResults.charts.city}:</label>
             <select
               value={cityId || ''}
               onChange={(e) => onCityChange(e.target.value ? parseInt(e.target.value, 10) : null)}
               className="px-3 py-1 text-sm border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               style={{ color: '#000000' }}
               disabled={citiesLoading || regionId === null}
-            >
-              <option value="">{t.pages.testResults.charts.allCzechRepublic}</option>
+              >
+              <option value="">{t.pages.testResults.charts.entireCountry}</option>
               {cities.map((city) => (
                 <option key={city.id} value={city.id}>
                   {city.name}

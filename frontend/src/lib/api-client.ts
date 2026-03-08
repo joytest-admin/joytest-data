@@ -94,10 +94,21 @@ import type {
 import type { ApiResponse } from '@/src/types/api.types';
 
 /**
- * Get all regions
+ * Get all regions.
+ *
+ * When country is provided, the backend will:
+ * - Filter regions to that country using ID ranges.
+ * - Always sort Czech regions before Slovak regions.
  */
-export async function getRegions(search?: string): Promise<RegionResponse[]> {
-  const query = search ? `?q=${encodeURIComponent(search)}` : '';
+export async function getRegions(search?: string, country?: 'CZ' | 'SK'): Promise<RegionResponse[]> {
+  const params = new URLSearchParams();
+  if (search) {
+    params.append('q', search);
+  }
+  if (country) {
+    params.append('country', country);
+  }
+  const query = params.toString() ? `?${params.toString()}` : '';
   const response = await apiGet<ApiResponse<RegionResponse[]>>(`/geography/regions${query}`);
   return response.data || [];
 }
@@ -307,6 +318,7 @@ export async function getPositiveTrendsByPathogensStatistics(
     allDoctors?: boolean;
     regionId?: number | null;
     cityId?: number | null;
+    country?: 'CZ' | 'SK' | null;
     startDate?: string;
     endDate?: string;
     period?: 'day' | 'week' | 'month';
@@ -331,6 +343,9 @@ export async function getPositiveTrendsByPathogensStatistics(
   }
   if (filters.cityId !== undefined && filters.cityId !== null) {
     params.append('cityId', filters.cityId.toString());
+  }
+  if (filters.country) {
+    params.append('country', filters.country);
   }
   if (filters.startDate) {
     params.append('startDate', new Date(filters.startDate).toISOString());
@@ -364,6 +379,7 @@ export async function getPathogensByAgeGroupsStatistics(
     city?: string;
     regionId?: number | null;
     cityId?: number | null;
+    country?: 'CZ' | 'SK' | null;
     startDate?: string;
     endDate?: string;
   } = {},
@@ -381,6 +397,9 @@ export async function getPathogensByAgeGroupsStatistics(
   }
   if (filters.cityId !== undefined && filters.cityId !== null) {
     params.append('cityId', filters.cityId.toString());
+  }
+  if (filters.country) {
+    params.append('country', filters.country);
   }
   if (filters.startDate) {
     params.append('startDate', new Date(filters.startDate).toISOString());
@@ -417,6 +436,7 @@ export async function getPathogenDistributionByScope(
     endDate?: string;
     regionId?: number | null;
     cityId?: number | null;
+    country?: 'CZ' | 'SK' | null;
   } = {},
   linkToken?: string | null,
 ): Promise<{
@@ -437,6 +457,9 @@ export async function getPathogenDistributionByScope(
   }
   if (filters.cityId !== undefined && filters.cityId !== null) {
     params.append('cityId', filters.cityId.toString());
+  }
+  if (filters.country) {
+    params.append('country', filters.country);
   }
   if (linkToken) {
     params.append('token', linkToken);

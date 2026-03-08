@@ -135,6 +135,9 @@ function TestsPageContent() {
   const [pathogensByAgeGroupsLoading, setPathogensByAgeGroupsLoading] = useState(false);
   const [pathogensByAgeGroupsError, setPathogensByAgeGroupsError] = useState<string | null>(null);
 
+  // Country selection for aggregate statistics (CZ vs SK)
+  const [country, setCountry] = useState<'CZ' | 'SK'>('CZ');
+
   // Fetch doctor profile and set initial region/city filters
   useEffect(() => {
     const fetchDoctorProfile = async () => {
@@ -290,7 +293,7 @@ function TestsPageContent() {
     fetchPathogensStatistics();
   }, [search, filterCity, filterStartDate, filterEndDate, linkToken]);
 
-  // Fetch trends statistics when filters or period change
+  // Fetch trends statistics when filters, period, or country change
   useEffect(() => {
     const fetchTrendsStatistics = async () => {
       setTrendsLoading(true);
@@ -304,6 +307,7 @@ function TestsPageContent() {
             allDoctors: trendsAllDoctors,
             regionId: trendsRegionId,
             cityId: trendsCityId,
+            country,
             startDate: filterStartDate || undefined,
             endDate: filterEndDate || undefined,
             period: trendsPeriod,
@@ -321,9 +325,9 @@ function TestsPageContent() {
     };
 
     fetchTrendsStatistics();
-  }, [search, filterCity, filterStartDate, filterEndDate, trendsPeriod, trendsAllDoctors, trendsRegionId, trendsCityId, linkToken]);
+  }, [search, filterCity, filterStartDate, filterEndDate, trendsPeriod, trendsAllDoctors, trendsRegionId, trendsCityId, country, linkToken]);
 
-  // Fetch pathogen distribution statistics when date filters or geographic filters change
+  // Fetch pathogen distribution statistics when date filters, geography, or country change
   useEffect(() => {
     const fetchDistributionStatistics = async () => {
       setDistributionLoading(true);
@@ -336,6 +340,7 @@ function TestsPageContent() {
             endDate: filterEndDate || undefined,
             regionId: distributionRegionId,
             cityId: distributionCityId,
+            country,
           },
           linkToken || null,
         );
@@ -350,7 +355,7 @@ function TestsPageContent() {
     };
 
     fetchDistributionStatistics();
-  }, [filterStartDate, filterEndDate, distributionRegionId, distributionCityId, linkToken]);
+  }, [filterStartDate, filterEndDate, distributionRegionId, distributionCityId, country, linkToken]);
 
   // Fetch pathogens by age groups statistics when filters change
   useEffect(() => {
@@ -363,6 +368,7 @@ function TestsPageContent() {
           {
             search: search.trim() || undefined,
             city: filterCity.trim() || undefined,
+            country,
             startDate: filterStartDate || undefined,
             endDate: filterEndDate || undefined,
           },
@@ -379,7 +385,15 @@ function TestsPageContent() {
     };
 
     fetchPathogensByAgeGroupsStatistics();
-  }, [search, filterCity, filterStartDate, filterEndDate, linkToken]);
+  }, [search, filterCity, filterStartDate, filterEndDate, country, linkToken]);
+
+  // Reset region/city filters when country changes to avoid cross-country selections
+  useEffect(() => {
+    setTrendsRegionId(null);
+    setTrendsCityId(null);
+    setDistributionRegionId(null);
+    setDistributionCityId(null);
+  }, [country]);
 
   // Update URL when filters change
   useEffect(() => {
@@ -736,9 +750,42 @@ function TestsPageContent() {
               </div>
             </div>
 
-            {/* Celkové výsledky - porovnání s kolegy v ČR a regionu Section */}
+            {/* Celkové výsledky - porovnání s kolegy v ČR / SK a regionu Section */}
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Celkové výsledky - porovnání s kolegy v ČR a regionu</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {country === 'CZ'
+                    ? 'Celkové výsledky - porovnání s kolegy v ČR a regionu'
+                    : 'Celkové výsledky - porovnání s kolegy na Slovensku a v kraji'}
+                </h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-700">Země:</span>
+                  <div className="inline-flex rounded-md shadow-sm" role="group">
+                    <button
+                      type="button"
+                      onClick={() => setCountry('CZ')}
+                      className={`px-3 py-1 text-xs font-medium border ${
+                        country === 'CZ'
+                          ? 'bg-blue-600 border-blue-600 text-white'
+                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      } first:rounded-l-md last:rounded-r-md`}
+                    >
+                      ČR
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCountry('SK')}
+                      className={`px-3 py-1 text-xs font-medium border -ml-px ${
+                        country === 'SK'
+                          ? 'bg-blue-600 border-blue-600 text-white'
+                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      } first:rounded-l-md last:rounded-r-md`}
+                    >
+                      SK
+                    </button>
+                  </div>
+                </div>
+              </div>
               {/* Trend chart on separate row */}
               <div className="mb-4">
                 <PositiveTrendsChart
@@ -753,6 +800,7 @@ function TestsPageContent() {
                   cityId={trendsCityId}
                   onCityChange={setTrendsCityId}
                   loading={trendsLoading}
+                  country={country}
                 />
               </div>
               {/* Other charts in grid */}
@@ -771,6 +819,7 @@ function TestsPageContent() {
                   cityId={distributionCityId}
                   onCityChange={setDistributionCityId}
                   loading={distributionLoading}
+                  countryCode={country}
                 />
               </div>
             </div>

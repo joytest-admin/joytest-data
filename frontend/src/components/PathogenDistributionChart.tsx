@@ -20,6 +20,7 @@ interface PathogenDistributionChartProps {
   cityId: number | null;
   onCityChange: (cityId: number | null) => void;
   loading?: boolean;
+  countryCode?: 'CZ' | 'SK';
 }
 
 interface Region {
@@ -51,6 +52,7 @@ export default function PathogenDistributionChart({
   cityId,
   onCityChange,
   loading,
+  countryCode = 'CZ',
 }: PathogenDistributionChartProps) {
   const { t } = useTranslation();
   const [regions, setRegions] = useState<Region[]>([]);
@@ -58,12 +60,13 @@ export default function PathogenDistributionChart({
   const [regionsLoading, setRegionsLoading] = useState(false);
   const [citiesLoading, setCitiesLoading] = useState(false);
 
-  // Fetch regions on mount
+  // Fetch regions on mount and whenever country code changes so that
+  // Czech and Slovak regions are clearly separated and ordered.
   useEffect(() => {
     const fetchRegions = async () => {
       setRegionsLoading(true);
       try {
-        const data = await getRegions();
+        const data = await getRegions(undefined, countryCode);
         setRegions(data);
       } catch (error) {
         console.error('Error fetching regions:', error);
@@ -72,7 +75,7 @@ export default function PathogenDistributionChart({
       }
     };
     fetchRegions();
-  }, []);
+  }, [countryCode]);
 
   // Fetch cities when region is selected
   useEffect(() => {
@@ -246,7 +249,7 @@ export default function PathogenDistributionChart({
               style={{ color: '#000000' }}
               disabled={regionsLoading}
             >
-              <option value="">{t.pages.testResults.charts.allCzechRepublic}</option>
+              <option value="">{t.pages.testResults.charts.entireCountry}</option>
               {regions.map((region) => (
                 <option key={region.id} value={region.id}>
                   {region.name}
@@ -264,7 +267,7 @@ export default function PathogenDistributionChart({
               style={{ color: '#000000' }}
               disabled={citiesLoading || regionId === null}
             >
-              <option value="">{regionId ? t.pages.testResults.charts.entireRegion : t.pages.testResults.charts.allCzechRepublic}</option>
+              <option value="">{regionId ? t.pages.testResults.charts.entireRegion : t.pages.testResults.charts.entireCountry}</option>
               {cities.map((city) => (
                 <option key={city.id} value={city.id}>
                   {city.name}
@@ -307,7 +310,7 @@ export default function PathogenDistributionChart({
               style={{ color: '#000000' }}
               disabled={regionsLoading}
             >
-              <option value="">{t.pages.testResults.charts.allCzechRepublic}</option>
+              <option value="">{t.pages.testResults.charts.entireCountry}</option>
               {regions.map((region) => (
                 <option key={region.id} value={region.id}>
                   {region.name}
@@ -325,7 +328,9 @@ export default function PathogenDistributionChart({
               style={{ color: '#000000' }}
               disabled={citiesLoading || regionId === null}
             >
-              <option value="">{regionId ? t.pages.testResults.charts.entireRegion : t.pages.testResults.charts.allCzechRepublic}</option>
+              <option value="">
+                {regionId ? t.pages.testResults.charts.entireRegion : t.pages.testResults.charts.entireCountry}
+              </option>
               {cities.map((city) => (
                 <option key={city.id} value={city.id}>
                   {city.name}
@@ -359,7 +364,7 @@ export default function PathogenDistributionChart({
               style={{ color: '#000000' }}
               disabled={regionsLoading}
             >
-              <option value="">{t.pages.testResults.charts.allCzechRepublic}</option>
+              <option value="">{t.pages.testResults.charts.entireCountry}</option>
               {regions.map((region) => (
                 <option key={region.id} value={region.id}>
                   {region.name}
@@ -377,7 +382,7 @@ export default function PathogenDistributionChart({
               style={{ color: '#000000' }}
               disabled={citiesLoading || regionId === null}
             >
-              <option value="">{regionId ? t.pages.testResults.charts.entireRegion : t.pages.testResults.charts.allCzechRepublic}</option>
+              <option value="">{regionId ? t.pages.testResults.charts.entireRegion : t.pages.testResults.charts.entireCountry}</option>
               {cities.map((city) => (
                 <option key={city.id} value={city.id}>
                   {city.name}

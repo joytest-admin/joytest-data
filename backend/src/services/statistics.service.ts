@@ -155,6 +155,7 @@ export const getPositiveTrendsByPathogensStatistics = async (
     city?: string;
     regionId?: number;
     cityId?: number;
+    country?: 'CZ' | 'SK';
     startDate?: string;
     endDate?: string;
     period?: 'day' | 'week' | 'month';
@@ -210,6 +211,7 @@ export const getPositivePathogensByAgeGroupsStatistics = async (
     city?: string;
     regionId?: number;
     cityId?: number;
+    country?: 'CZ' | 'SK';
     startDate?: string;
     endDate?: string;
   } = {},
@@ -238,6 +240,7 @@ export const getPositivePathogenDistributionByScopeStatistics = async (
     endDate?: string;
     regionId?: number;
     cityId?: number;
+    country?: 'CZ' | 'SK';
   } = {},
 ): Promise<{
   me: Array<{ pathogenName: string; count: number; percentage: number }>;

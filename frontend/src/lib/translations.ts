@@ -250,6 +250,9 @@ export interface Translations {
     symptoms: string;
     symptomsRequired: string;
     symptomsHelp: string;
+    showOptionalFields: string;
+    hideOptionalFields: string;
+    optionalFieldsHint: string;
     temperature: string;
     temperatureRange: string;
     temperaturePlaceholder: string;
@@ -545,6 +548,9 @@ export const translations: Record<LanguageCode, Translations> = {
       symptoms: 'Příznaky',
       symptomsRequired: 'Příznaky*',
       symptomsHelp: 'Příznaky a teplota jsou nepovinné',
+      showOptionalFields: 'Zobrazit nepovinné údaje',
+      hideOptionalFields: 'Skrýt nepovinné údaje',
+      optionalFieldsHint: 'příznaky, teplota, poznámky, vakcinace a další',
       temperature: 'Teplota (°C)',
       temperatureRange: 'Rozsah: 35.0 - 42.0 °C',
       temperaturePlaceholder: 'např. 37.5',
@@ -837,6 +843,9 @@ export const translations: Record<LanguageCode, Translations> = {
       symptoms: 'Symptoms',
       symptomsRequired: 'Symptoms*',
       symptomsHelp: 'Symptoms and temperature are optional',
+      showOptionalFields: 'Show optional fields',
+      hideOptionalFields: 'Hide optional fields',
+      optionalFieldsHint: 'symptoms, temperature, notes, vaccinations and more',
       temperature: 'Temperature (°C)',
       temperatureRange: 'Range: 35.0 - 42.0 °C',
       temperaturePlaceholder: 'e.g. 37.5',

@@ -198,6 +198,24 @@ export default function TestResultForm({
   const [patientId, setPatientId] = useState<string | null>(initialData?.patientId || null);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
 
+  // Optional sections (symptoms, notes, additional info, vaccinations) are
+  // collapsed by default; start expanded when the record already carries
+  // optional data so nothing is hidden in edit mode.
+  const hasInitialOptionalData = !!(
+    initialData &&
+    ((initialData.symptoms && initialData.symptoms.length > 0) ||
+      initialData.otherInformations ||
+      initialData.sari ||
+      initialData.atb ||
+      initialData.antivirals ||
+      initialData.obesity ||
+      initialData.respiratorySupport ||
+      initialData.ecmo ||
+      initialData.pregnancy ||
+      (initialData.vaccinations && initialData.vaccinations.length > 0))
+  );
+  const [showOptionalFields, setShowOptionalFields] = useState(hasInitialOptionalData);
+
   // UI state
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -990,6 +1008,34 @@ export default function TestResultForm({
           </div>
         </div>
 
+        {/* Optional fields toggle */}
+        <div className="border-t border-gray-200 pt-4">
+          <button
+            type="button"
+            onClick={() => setShowOptionalFields((prev) => !prev)}
+            aria-expanded={showOptionalFields}
+            className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm sm:text-base font-medium text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md min-h-[44px] sm:min-h-0"
+          >
+            <svg
+              className={`w-4 h-4 flex-shrink-0 transition-transform ${showOptionalFields ? 'rotate-90' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            <span>{showOptionalFields ? t.form.hideOptionalFields : t.form.showOptionalFields}</span>
+            {!showOptionalFields && (
+              <span className="text-gray-500 font-normal text-xs sm:text-sm">
+                ({t.form.optionalFieldsHint})
+              </span>
+            )}
+          </button>
+        </div>
+
+        {showOptionalFields && (
+        <>
         {/* Symptoms Section */}
         <div>
           <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2 sm:mb-4">
@@ -1198,6 +1244,8 @@ export default function TestResultForm({
           value={vaccinations}
           onChange={setVaccinations}
         />
+        </>
+        )}
 
         {/* Submit Button */}
         <div className="flex justify-stretch sm:justify-end pt-2">
